@@ -64,7 +64,12 @@ async def change_passwd(data: UserPasswd, response: Response, auth: Optional[str
   return {"passwd": data.passwd}
 
 @app.get("/api/user", tags=["User"])
-async def read_account(response: Response, admin: Optional[str] = Header(None)):
+async def read_account(response: Response, auth: Optional[str] = Header(None)):
+  user_name = check_admin(auth)
+  if not user_name:
+    response.status_code = 401
+    return {"Auth fail"}
+
   with SessionContext() as session:
     res = session.query(dbUser).all()
   ret = []
@@ -77,19 +82,23 @@ async def read_account(response: Response, admin: Optional[str] = Header(None)):
   return parse_obj_as(List[UserList], ret)
 
 @app.post("/api/user", tags=["User"])
-async def create_account(data: UserData, response: Response):
+async def create_account(data: UserData, response: Response, admin: Optional[str] = Header(None)):
   with SessionContext() as session:
     res = session.query(dbUser).filter_by(name = data.name)
   if len(list(res)):
     response.status_code = 202
     return {"Already name exists"}
+  if admin == ADMIN_KEY:
+    user_role = "admin"
+  else:
+    user_role = "user"
   with SessionContext() as session:
     hash_passwd = hashgen(data.passwd)
-    User = dbUser(name=data.name, passwd=hash_passwd, role="user")
+    User = dbUser(name=data.name, passwd=hash_passwd, role=user_role)
     session.add(User)
     session.commit()
   response.status_code = 201
-  return {"name": data.name, "passwd": data.passwd, "role": "user"}
+  return {"name": data.name, "passwd": data.passwd, "role": user_role}
 
 @app.put("/api/user/{user_name}", tags=["User"])
 async def update_account(user_name: str, data: UserPasswd, response: Response, auth: Optional[str] = Header(None)):

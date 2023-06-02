@@ -10,6 +10,7 @@ services:
       - 8000:8000
     environment:
       - SECRET=${SECRET}
+      - ADMIN_KEY=${ADMIN_KEY}
       - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
     depends_on:
       - db
