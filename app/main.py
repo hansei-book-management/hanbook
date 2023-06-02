@@ -37,12 +37,12 @@ app.add_middleware(
 async def sign_in(data: UserData, response: Response):
   with SessionContext() as session:
     hash_passwd = hashgen(data.passwd)
-    res = session.query(dbUser).filter_by(name = data.name, passwd = hash_passwd)
+    res = session.query(dbUser).filter_by(uid = data.uid, passwd = hash_passwd)
   if len(list(res)):
     if res[0].role == "admin":
-      auth = sign_admin(res[0].name)
+      auth = sign_admin(res[0].uid)
     else:
-      auth = sign_auth(res[0].name)
+      auth = sign_auth(res[0].uid)
     response.status_code = 201
     return {"auth": auth}
   else:
@@ -51,22 +51,22 @@ async def sign_in(data: UserData, response: Response):
 
 @app.patch("/api/auth", tags=["Authentication"])
 async def change_passwd(data: UserPasswd, response: Response, auth: Optional[str] = Header(None)):
-  user_name = check_auth(auth)
-  if not user_name:
+  uid = check_auth(auth)
+  if not uid:
     response.status_code = 401
     return {"Unauthorized"}
 
   with SessionContext() as session:
     hash_passwd = hashgen(data.passwd)
-    User = session.query(dbUser).filter_by(name = user_name)
+    User = session.query(dbUser).filter_by(uid = uid)
     User.update({"passwd": hash_passwd})
     session.commit()
   return {"passwd": data.passwd}
 
 @app.get("/api/user", tags=["User"])
 async def read_account(response: Response, auth: Optional[str] = Header(None)):
-  user_name = check_admin(auth)
-  if not user_name:
+  admin = check_admin(auth)
+  if not admin:
     response.status_code = 401
     return {"Auth fail"}
 
@@ -75,7 +75,7 @@ async def read_account(response: Response, auth: Optional[str] = Header(None)):
   ret = []
   for i in res:
     tmp = {
-      "name": i.name,
+      "uid": i.uid,
       "role": i.role
     }
     ret.append(tmp)
@@ -84,50 +84,50 @@ async def read_account(response: Response, auth: Optional[str] = Header(None)):
 @app.post("/api/user", tags=["User"])
 async def create_account(data: UserData, response: Response, admin: Optional[str] = Header(None)):
   with SessionContext() as session:
-    res = session.query(dbUser).filter_by(name = data.name)
+    res = session.query(dbUser).filter_by(uid = data.uid)
   if len(list(res)):
     response.status_code = 202
-    return {"Already name exists"}
+    return {"Already uid exists"}
   if admin == ADMIN_KEY:
     user_role = "admin"
   else:
     user_role = "user"
   with SessionContext() as session:
     hash_passwd = hashgen(data.passwd)
-    User = dbUser(name=data.name, passwd=hash_passwd, role=user_role)
+    User = dbUser(uid=data.uid, passwd=hash_passwd, role=user_role)
     session.add(User)
     session.commit()
   response.status_code = 201
-  return {"name": data.name, "passwd": data.passwd, "role": user_role}
+  return {"uid": data.uid, "passwd": data.passwd, "role": user_role}
 
-@app.put("/api/user/{user_name}", tags=["User"])
-async def update_account(user_name: str, data: UserPasswd, response: Response, auth: Optional[str] = Header(None)):
-  user_name = check_admin(auth)
-  if not user_name:
+@app.put("/api/user/{uid}", tags=["User"])
+async def update_account(uid: str, data: UserPasswd, response: Response, auth: Optional[str] = Header(None)):
+  admin = check_admin(auth)
+  if not admin:
     response.status_code = 401
     return {"Auth fail"}
 
   with SessionContext() as session:
-    res = session.query(dbUser).filter_by(name = user_name)
+    res = session.query(dbUser).filter_by(uid = uid)
   if not len(list(res)):
     response.status_code = 404
     return {"Name not found"}
   with SessionContext() as session:
     hash_passwd = hashgen(data.passwd)
-    User = session.query(dbUser).filter_by(name = user_name)
+    User = session.query(dbUser).filter_by(uid = uid)
     User.update({"passwd": hash_passwd})
     session.commit()
   return {"passwd": data.passwd}
 
-@app.delete("/api/user/{user_name}", tags=["User"])
-async def delete_account(user_name: str, response: Response, auth: Optional[str] = Header(None)):
-  user_name = check_admin(auth)
-  if not user_name:
+@app.delete("/api/user/{uid}", tags=["User"])
+async def delete_account(uid: str, response: Response, auth: Optional[str] = Header(None)):
+  admin = check_admin(auth)
+  if not admin:
     response.status_code = 401
     return {"Auth fail"}
 
   with SessionContext() as session:
-    User = session.query(dbUser).filter_by(name = user_name)
+    User = session.query(dbUser).filter_by(uid = uid)
     User.delete()
     session.commit()
   response.status_code = 204

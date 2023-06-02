@@ -3,11 +3,11 @@ from typing import List, Optional
 from pydantic import BaseModel, parse_obj_as
 
 class UserData(BaseModel):
-  name: str
+  uid: str
   passwd: str
 
 class UserList(BaseModel):
-  name: str
+  uid: str
   role: str
 
 class UserPasswd(BaseModel):

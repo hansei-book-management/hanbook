@@ -11,7 +11,7 @@ engine = create_engine(DSN, echo = True)
 class dbUser(Base):
   __tablename__ = "users"
 
-  name = Column(String, primary_key=True)
+  uid = Column(String, primary_key=True)
   passwd = Column(String, nullable=False)
   role = Column(String, nullable=False)
 
