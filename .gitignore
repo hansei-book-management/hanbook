@@ -1,0 +1,29 @@
+﻿# node_modules
+node_modules/
+
+# env files
+.env
+
+# database files
+db/
+*.db
+*.db-journal
+
+# configuration files
+config.json
+
+# other files
+passwords.txt
+requirements.txt
+
+# IDE files
+.idea/
+*.iml
+
+# log files
+*.log
+./gunicorn-access.log
+
+# __pycache
+*.pyc
+__pycache__/
