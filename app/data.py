@@ -6,9 +6,19 @@ class UserData(BaseModel):
   uid: str
   passwd: str
 
+class UserSignUp(BaseModel):
+  uid: str
+  passwd: str
+  name: str
+  num: str
+  phone: str
+
 class UserList(BaseModel):
   uid: str
   role: str
+  name: str
+  num: str
+  phone: str
 
 class UserPasswd(BaseModel):
   passwd: str

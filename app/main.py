@@ -76,13 +76,16 @@ async def read_account(response: Response, auth: Optional[str] = Header(None)):
   for i in res:
     tmp = {
       "uid": i.uid,
-      "role": i.role
+      "role": i.role,
+      "name": i.name,
+      "num": i.num,
+      "phone": i.phone
     }
     ret.append(tmp)
   return parse_obj_as(List[UserList], ret)
 
 @app.post("/api/user", tags=["User"])
-async def create_account(data: UserData, response: Response, admin: Optional[str] = Header(None)):
+async def create_account(data: UserSignUp, response: Response, admin: Optional[str] = Header(None)):
   with SessionContext() as session:
     res = session.query(dbUser).filter_by(uid = data.uid)
   if len(list(res)):
@@ -94,11 +97,19 @@ async def create_account(data: UserData, response: Response, admin: Optional[str
     user_role = "user"
   with SessionContext() as session:
     hash_passwd = hashgen(data.passwd)
-    User = dbUser(uid=data.uid, passwd=hash_passwd, role=user_role)
+    User = dbUser(uid=data.uid, passwd=hash_passwd, role=user_role, name=data.name, num=data.num, phone=data.phone)
     session.add(User)
     session.commit()
   response.status_code = 201
-  return {"uid": data.uid, "passwd": data.passwd, "role": user_role}
+  tmp = {
+    "uid": data.uid,
+    "passwd": data.passwd,
+    "role": user_role,
+    "name": data.name,
+    "num": data.num,
+    "phone": data.phone
+  }
+  return tmp
 
 @app.put("/api/user/{uid}", tags=["User"])
 async def update_account(uid: str, data: UserPasswd, response: Response, auth: Optional[str] = Header(None)):

@@ -14,6 +14,9 @@ class dbUser(Base):
   uid = Column(String, primary_key=True)
   passwd = Column(String, nullable=False)
   role = Column(String, nullable=False)
+  name = Column(String, nullable=False)
+  num = Column(String, nullable=False)
+  phone = Column(String, nullable=False)
 
 Base.metadata.create_all(engine)
 
