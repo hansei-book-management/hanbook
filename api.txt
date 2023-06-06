@@ -14,7 +14,6 @@ DELETE /api/club/<id>/book/<book_id> # 책 삭제 (부장)
 GET /api/club/<id>/member # 부원 목록 (부장)
 POST /api/club/<id>/member # 초대 코드 생성 (부장)
 
-GET /api/club/<id>/member/<id> # 부원 상태 조회 (부장)
 PUT /api/club/<id>/member/<id> # 부원 상태 수정 (부장)
 DELETE /api/club/<id>/member/<id> # 부원 추방 (부장)
 
