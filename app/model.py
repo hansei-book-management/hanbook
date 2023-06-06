@@ -23,6 +23,7 @@ class dbClub(Base):
 
   cid = Column(String, primary_key=True)
   name = Column(String, nullable=False)
+  director = Column(String, ForeignKey("users.uid"))
 
 class dbList(Base):
   __tablename__ = "lists"
