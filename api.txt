@@ -3,7 +3,6 @@ GET /api/book # 도서 검색 (사용자)
 GET /api/club # 가입중인 동아리 (사용자)
 POST /api/club # 동아리 추가 (사용자)
 
-GET /api/club/<id> # 동아리 정보 (부원)
 PUT /api/club/<id> # 동아리 정보 수정 (부장)
 DELETE /api/club/<id> # 동아리 삭제 (부장)
 
