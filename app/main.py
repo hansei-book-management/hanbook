@@ -90,14 +90,25 @@ async def update_club(cid: int, data: UpdateClub, response: Response, auth: Opti
     return {"Unauthorized"}
 
   with SessionContext() as session:
-    res = session.query(dbUser).filter_by(uid = data.director)
+    res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
+  if not len(list(res)):
+    response.status_code = 400
+    return {"Access denied"}
+
+  with SessionContext() as session:
+    res = session.query(dbList).filter_by(uid = data.director, cid = cid)
   if not len(list(res)):
     response.status_code = 404
     return {"User does not exist"}
 
   with SessionContext() as session:
-    Club = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
+    Club = session.query(dbClub).filter_by(cid = cid)
     Club.update({"name": data.name, "director": data.director})
+    session.commit()
+
+  with SessionContext() as session:
+    ClubList = session.query(dbList).filter_by(cid = cid)
+    ClubList.update({"name": data.name})
     session.commit()
 
   tmp = {
@@ -105,6 +116,32 @@ async def update_club(cid: int, data: UpdateClub, response: Response, auth: Opti
     "director": data.director
   }
   return tmp
+
+@app.delete("/api/club/{cid}", tags=["Club"])
+async def delete_club(cid: int, response: Response, auth: Optional[str] = Header(None)):
+  uid = check_auth(auth)
+  if not uid:
+    response.status_code = 401
+    return {"Unauthorized"}
+
+  with SessionContext() as session:
+    res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
+  if not len(list(res)):
+    response.status_code = 400
+    return {"Access denied"}
+
+  with SessionContext() as session:
+    ClubList = session.query(dbList).filter_by(cid = cid)
+    ClubList.delete()
+    session.commit()
+
+  with SessionContext() as session:
+    Club = session.query(dbClub).filter_by(cid = cid)
+    Club.delete()
+    session.commit()
+
+  response.status_code = 204
+  return {}
 
 @app.post("/api/auth", tags=["Authentication"])
 async def sign_in(data: UserData, response: Response):
