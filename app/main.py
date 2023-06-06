@@ -82,6 +82,30 @@ async def create_club(data: CreateClub, response: Response, auth: Optional[str] 
   }
   return tmp
 
+@app.put("/api/club/{cid}", tags=["Club"])
+async def update_club(cid: int, data: UpdateClub, response: Response, auth: Optional[str] = Header(None)):
+  uid = check_auth(auth)
+  if not uid:
+    response.status_code = 401
+    return {"Unauthorized"}
+
+  with SessionContext() as session:
+    res = session.query(dbUser).filter_by(uid = data.director)
+  if not len(list(res)):
+    response.status_code = 404
+    return {"User does not exist"}
+
+  with SessionContext() as session:
+    Club = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
+    Club.update({"name": data.name, "director": data.director})
+    session.commit()
+
+  tmp = {
+    "name": data.name,
+    "director": data.director
+  }
+  return tmp
+
 @app.post("/api/auth", tags=["Authentication"])
 async def sign_in(data: UserData, response: Response):
   with SessionContext() as session:
