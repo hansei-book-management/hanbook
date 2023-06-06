@@ -2,6 +2,9 @@ from typing import List, Optional
 
 from pydantic import BaseModel, parse_obj_as
 
+class CreateClub(BaseModel):
+  name: str
+
 class UserData(BaseModel):
   uid: str
   passwd: str

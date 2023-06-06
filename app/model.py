@@ -21,16 +21,16 @@ class dbUser(Base):
 class dbClub(Base):
   __tablename__ = "clubs"
 
-  cid = Column(String, primary_key=True)
+  cid = Column(Integer, primary_key=True)
   name = Column(String, nullable=False)
   director = Column(String, ForeignKey("users.uid"))
 
 class dbList(Base):
   __tablename__ = "lists"
 
-  lid = Column(String, primary_key=True)
+  lid = Column(Integer, primary_key=True)
   uid = Column(String, ForeignKey("users.uid"))
-  cid = Column(String, ForeignKey("clubs.cid"))
+  cid = Column(Integer, ForeignKey("clubs.cid"))
 
 Base.metadata.create_all(engine)
 

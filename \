@@ -36,24 +36,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.post("/api/club", tags=["Club"])
-async def create_club(data: CreateClub, response: Response, auth: Optional[str] = Header(None)):
+@app.post("/api/auth", tags=["Club"])
+async def create_club(data: UserPasswd, response: Response, auth: Optional[str] = Header(None)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
     return {"Unauthorized"}
 
   with SessionContext() as session:
-    Club = dbClub(name=data.name, director=uid)
-    session.add(Club)
+    hash_passwd = hashgen(data.passwd)
+    User = session.query(dbUser).filter_by(uid = uid)
+    User.update({"passwd": hash_passwd})
     session.commit()
-
-  response.status_code = 201
-  tmp = {
-    "name": data.name,
-    "director": uid
-  }
-  return tmp
+  return {"passwd": data.passwd}
 
 @app.post("/api/auth", tags=["Authentication"])
 async def sign_in(data: UserData, response: Response):
