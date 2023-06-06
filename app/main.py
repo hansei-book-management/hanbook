@@ -36,6 +36,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/api/club", tags=["Club"])
+async def read_account(response: Response, auth: Optional[str] = Header(None)):
+  uid = check_auth(auth)
+  if not uid:
+    response.status_code = 401
+    return {"Unauthorized"}
+
+  with SessionContext() as session:
+    res = session.query(dbList).filter_by(uid = uid).all()
+  ret = []
+  for i in res:
+    tmp = {
+      "cid": i.cid,
+      "name": i.name
+    }
+    ret.append(tmp)
+  return parse_obj_as(List[ClubList], ret)
+
 @app.post("/api/club", tags=["Club"])
 async def create_club(data: CreateClub, response: Response, auth: Optional[str] = Header(None)):
   uid = check_auth(auth)
@@ -46,6 +64,15 @@ async def create_club(data: CreateClub, response: Response, auth: Optional[str] 
   with SessionContext() as session:
     Club = dbClub(name=data.name, director=uid)
     session.add(Club)
+    session.commit()
+
+  with SessionContext() as session:
+    res = session.query(dbClub).filter_by(director = uid).all()
+    cid = res[-1].cid
+
+  with SessionContext() as session:
+    ClubList = dbList(uid=uid, cid=cid, name=data.name)
+    session.add(ClubList)
     session.commit()
 
   response.status_code = 201

@@ -5,6 +5,10 @@ from pydantic import BaseModel, parse_obj_as
 class CreateClub(BaseModel):
   name: str
 
+class ClubList(BaseModel):
+  cid: int
+  name: str
+
 class UserData(BaseModel):
   uid: str
   passwd: str
