@@ -14,7 +14,6 @@ config.json
 
 # other files
 passwords.txt
-requirements.txt
 
 # IDE files
 .idea/
