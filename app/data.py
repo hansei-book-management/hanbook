@@ -13,6 +13,9 @@ class ClubList(BaseModel):
   cid: int
   name: str
 
+class InviteToken(BaseModel):
+  token: str
+
 class InviteMember(BaseModel):
   end: int
 

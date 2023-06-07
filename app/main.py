@@ -146,7 +146,73 @@ async def delete_club(cid: int, response: Response, auth: Optional[str] = Header
   response.status_code = 204
   return {}
 
-@app.put("/api/club/{cid}/member", tags=["Member"])
+@app.post("/api/club/member", tags=["Member"])
+async def update_club(data: InviteToken, response: Response, auth: Optional[str] = Header(None)):
+  uid = check_auth(auth)
+  if not uid:
+    response.status_code = 401
+    return {"Unauthorized"}
+
+  cid = check_invite(data.token)
+
+  with SessionContext() as session:
+    res = session.query(dbList).filter_by(uid = uid).filter_by(cid = cid)
+  if len(list(res)):
+    response.status_code = 202
+    return {"Already uid exists"}
+
+  with SessionContext() as session:
+    res = session.query(dbClub).filter_by(cid = cid)
+  if not len(list(res)):
+    response.status_code = 404
+    return {"Club does not exist"}
+
+  with SessionContext() as session:
+    ClubList = dbList(uid=uid, cid=cid, name=res[0].name)
+    session.add(ClubList)
+    session.commit()
+
+  tmp = {
+    "name": res[0].name,
+    "cid": cid,
+  }
+  return tmp
+
+@app.get("/api/club/{cid}/member", tags=["Member"])
+async def update_club(cid: int, response: Response, auth: Optional[str] = Header(None)):
+  uid = check_auth(auth)
+  if not uid:
+    response.status_code = 401
+    return {"Unauthorized"}
+
+  with SessionContext() as session:
+    res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
+  if not len(list(res)):
+    response.status_code = 400
+    return {"Access denied"}
+
+  with SessionContext() as session:
+    res = session.query(dbList).filter_by(cid = cid)
+
+  user_list = []
+  for i in res:
+    user_list.append(i.uid)
+
+  ret = []
+  for i in user_list:
+    with SessionContext() as session:
+      res = session.query(dbUser).filter_by(uid = i)
+    tmp = {
+      "uid": res[0].uid,
+      "role": res[0].role,
+      "name": res[0].name,
+      "num": res[0].num,
+      "phone": res[0].phone
+    }
+    ret.append(tmp)
+  return parse_obj_as(List[UserList], ret)
+
+@app.post("/api/club/{cid}/member", tags=["Member"])
 async def update_club(cid: int, data: InviteMember, response: Response, auth: Optional[str] = Header(None)):
   uid = check_auth(auth)
   if not uid:
