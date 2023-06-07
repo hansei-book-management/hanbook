@@ -15,6 +15,9 @@ tags_metadata = [
       "name": "Club",
     },
     {
+      "name": "Member",
+    },
+    {
       "name": "Authentication",
     },
     {
@@ -142,6 +145,26 @@ async def delete_club(cid: int, response: Response, auth: Optional[str] = Header
 
   response.status_code = 204
   return {}
+
+@app.put("/api/club/{cid}/member", tags=["Member"])
+async def update_club(cid: int, data: InviteMember, response: Response, auth: Optional[str] = Header(None)):
+  uid = check_auth(auth)
+  if not uid:
+    response.status_code = 401
+    return {"Unauthorized"}
+
+  with SessionContext() as session:
+    res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
+  if not len(list(res)):
+    response.status_code = 400
+    return {"Access denied"}
+
+  token = sign_invite(cid, data.end)
+
+  tmp = {
+    "token": token,
+  }
+  return tmp
 
 @app.post("/api/auth", tags=["Authentication"])
 async def sign_in(data: UserData, response: Response):
