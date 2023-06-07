@@ -232,6 +232,26 @@ async def update_club(cid: int, data: InviteMember, response: Response, auth: Op
   }
   return tmp
 
+@app.delete("/api/club/{cid}/member/{user_id}", tags=["Member"])
+async def delete_account(cid: int, user_id: str, response: Response, auth: Optional[str] = Header(None)):
+  uid = check_auth(auth)
+  if not uid:
+    response.status_code = 401
+    return {"Unauthorized"}
+
+  with SessionContext() as session:
+    res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
+  if not len(list(res)):
+    response.status_code = 400
+    return {"Access denied"}
+
+  with SessionContext() as session:
+    ClubList = session.query(dbList).filter_by(uid = user_id).filter_by(cid = cid)
+    ClubList.delete()
+    session.commit()
+  response.status_code = 204
+  return {}
+
 @app.post("/api/auth", tags=["Authentication"])
 async def sign_in(data: UserData, response: Response):
   with SessionContext() as session:
