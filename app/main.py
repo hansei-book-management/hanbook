@@ -200,21 +200,22 @@ async def read_member(cid: int, response: Response, auth: Optional[str] = Header
 
   user_list = []
   for i in res:
-    user_list.append(i.uid)
+    user_list.append([i.uid, i.freeze])
 
   ret = []
   for i in user_list:
     with SessionContext() as session:
-      res = session.query(dbUser).filter_by(uid = i)
+      res = session.query(dbUser).filter_by(uid = i[0])
     tmp = {
       "uid": res[0].uid,
       "role": res[0].role,
       "name": res[0].name,
       "num": res[0].num,
-      "phone": res[0].phone
+      "phone": res[0].phone,
+      "freeze": i[1]
     }
     ret.append(tmp)
-  return parse_obj_as(List[UserList], ret)
+  return parse_obj_as(List[ClubUserList], ret)
 
 @app.post("/api/club/{cid}/member", tags=["Member"])
 async def invite_member(cid: int, data: InviteMember, response: Response, auth: Optional[str] = Header(None)):

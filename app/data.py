@@ -13,6 +13,14 @@ class ClubList(BaseModel):
   cid: int
   name: str
 
+class ClubUserList(BaseModel):
+  uid: str
+  role: str
+  name: str
+  num: str
+  phone: str
+  freeze: int
+
 class InviteToken(BaseModel):
   token: str
 
