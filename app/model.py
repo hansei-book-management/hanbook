@@ -31,6 +31,7 @@ class dbList(Base):
   lid = Column(Integer, primary_key=True, autoincrement=True)
   uid = Column(String, ForeignKey("users.uid"))
   cid = Column(Integer, ForeignKey("clubs.cid"))
+  freeze = Column(Integer, nullable=False)
   name = Column(String, nullable=False)
 
 Base.metadata.create_all(engine)

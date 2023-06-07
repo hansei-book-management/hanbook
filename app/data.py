@@ -19,6 +19,9 @@ class InviteToken(BaseModel):
 class InviteMember(BaseModel):
   end: int
 
+class Freeze(BaseModel):
+  freeze: int
+
 class UserData(BaseModel):
   uid: str
   passwd: str

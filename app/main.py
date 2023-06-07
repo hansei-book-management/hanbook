@@ -40,7 +40,7 @@ app.add_middleware(
 )
 
 @app.get("/api/club", tags=["Club"])
-async def read_account(response: Response, auth: Optional[str] = Header(None)):
+async def read_club(response: Response, auth: Optional[str] = Header(None)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
@@ -52,7 +52,8 @@ async def read_account(response: Response, auth: Optional[str] = Header(None)):
   for i in res:
     tmp = {
       "cid": i.cid,
-      "name": i.name
+      "name": i.name,
+      "freeze": i.freeze
     }
     ret.append(tmp)
   return parse_obj_as(List[ClubList], ret)
@@ -74,7 +75,7 @@ async def create_club(data: CreateClub, response: Response, auth: Optional[str] 
     cid = res[-1].cid
 
   with SessionContext() as session:
-    ClubList = dbList(uid=uid, cid=cid, name=data.name)
+    ClubList = dbList(uid=uid, cid=cid, name=data.name, freeze=0)
     session.add(ClubList)
     session.commit()
 
@@ -147,13 +148,16 @@ async def delete_club(cid: int, response: Response, auth: Optional[str] = Header
   return {}
 
 @app.post("/api/club/member", tags=["Member"])
-async def update_club(data: InviteToken, response: Response, auth: Optional[str] = Header(None)):
+async def member(data: InviteToken, response: Response, auth: Optional[str] = Header(None)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
     return {"Unauthorized"}
 
   cid = check_invite(data.token)
+  if not cid:
+    response.status_code = 400
+    return {"Access denied"}
 
   with SessionContext() as session:
     res = session.query(dbList).filter_by(uid = uid).filter_by(cid = cid)
@@ -168,7 +172,7 @@ async def update_club(data: InviteToken, response: Response, auth: Optional[str]
     return {"Club does not exist"}
 
   with SessionContext() as session:
-    ClubList = dbList(uid=uid, cid=cid, name=res[0].name)
+    ClubList = dbList(uid=uid, cid=cid, name=res[0].name, freeze=0)
     session.add(ClubList)
     session.commit()
 
@@ -179,7 +183,7 @@ async def update_club(data: InviteToken, response: Response, auth: Optional[str]
   return tmp
 
 @app.get("/api/club/{cid}/member", tags=["Member"])
-async def update_club(cid: int, response: Response, auth: Optional[str] = Header(None)):
+async def read_member(cid: int, response: Response, auth: Optional[str] = Header(None)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
@@ -213,7 +217,7 @@ async def update_club(cid: int, response: Response, auth: Optional[str] = Header
   return parse_obj_as(List[UserList], ret)
 
 @app.post("/api/club/{cid}/member", tags=["Member"])
-async def update_club(cid: int, data: InviteMember, response: Response, auth: Optional[str] = Header(None)):
+async def invite_member(cid: int, data: InviteMember, response: Response, auth: Optional[str] = Header(None)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
@@ -232,8 +236,29 @@ async def update_club(cid: int, data: InviteMember, response: Response, auth: Op
   }
   return tmp
 
+
+@app.patch("/api/club/{cid}/member/{user_id}", tags=["Member"])
+async def patch_member(cid: int, user_id: str, data: Freeze, response: Response, auth: Optional[str] = Header(None)):
+  uid = check_auth(auth)
+  if not uid:
+    response.status_code = 401
+    return {"Unauthorized"}
+
+  with SessionContext() as session:
+    res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
+  if not len(list(res)):
+    response.status_code = 400
+    return {"Access denied"}
+
+  with SessionContext() as session:
+    ClubList = session.query(dbList).filter_by(uid = user_id).filter_by(cid = cid)
+    ClubList.update({"freeze": data.freeze})
+    session.commit()
+  response.status_code = 204
+  return {"freeze": data.freeze}
+
 @app.delete("/api/club/{cid}/member/{user_id}", tags=["Member"])
-async def delete_account(cid: int, user_id: str, response: Response, auth: Optional[str] = Header(None)):
+async def delete_member(cid: int, user_id: str, response: Response, auth: Optional[str] = Header(None)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401

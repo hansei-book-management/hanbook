@@ -18,7 +18,7 @@ POST /api/club/member # 동아리 가입 (사용자)
 GET /api/club/<id>/member # 부원 목록 (부장)
 POST /api/club/<id>/member # 초대 코드 생성 (부장)
 
-PUT /api/club/<id>/member/<id> # 부원 상태 수정 (부장)
+PATCH /api/club/<id>/member/<id> # 부원 상태 수정 (부장)
 DELETE /api/club/<id>/member/<id> # 부원 추방 (부장)
 
 POST /api/auth # 로그인
