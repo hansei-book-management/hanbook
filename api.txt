@@ -11,6 +11,8 @@ POST /api/club/<id>/book # 동아리 책 추가 (부장)
 
 DELETE /api/club/<id>/book/<book_id> # 책 삭제 (부장)
 
+POST /api/club/member # 동아리 가입 (사용자)
+
 GET /api/club/<id>/member # 부원 목록 (부장)
 POST /api/club/<id>/member # 초대 코드 생성 (부장)
 
