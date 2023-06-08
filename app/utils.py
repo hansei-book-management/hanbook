@@ -5,6 +5,7 @@ from hashlib import sha256
 from uuid import uuid4
 
 from app.config import *
+from app.ext.naver_book_api import *
 
 from base64 import b64decode
 

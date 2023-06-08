@@ -4,3 +4,4 @@ fastapi
 sqlalchemy
 PyJWT
 gunicorn
+requests

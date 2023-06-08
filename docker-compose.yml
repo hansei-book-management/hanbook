@@ -13,6 +13,8 @@ services:
       - SECRET=${SECRET}
       - ADMIN_KEY=${ADMIN_KEY}
       - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - NAVER_CLIENT_ID=${NAVER_CLIENT_ID}
+      - NAVER_CLIENT_SECRET=${NAVER_CLIENT_SECRET}
     depends_on:
       - db
     restart: on-failure
