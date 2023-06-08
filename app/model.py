@@ -43,6 +43,18 @@ class dbInvite(Base):
   end = Column(Integer, nullable=False)
   use = Column(Integer, nullable=False)
 
+class dbBook(Base):
+  __tablename__ = "books"
+
+  bid = Column(Integer, primary_key=True, autoincrement=True)
+
+  cid = Column(Integer, ForeignKey("clubs.cid"))
+
+  uid = Column(String, ForeignKey("users.uid"), nullable=True)
+  end = Column(Integer, nullable=True)
+
+  data = Column(String, nullable=False)
+
 Base.metadata.create_all(engine)
 
 Session = sessionmaker(bind=engine)

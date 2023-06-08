@@ -2,6 +2,16 @@ from typing import List, Optional
 
 from pydantic import BaseModel, parse_obj_as
 
+class AddBook(BaseModel):
+  isbn: str
+
+class BookList(BaseModel):
+  bid: int
+  cid: int
+  uid: str
+  end: int
+  data: str
+
 class CreateClub(BaseModel):
   name: str
 

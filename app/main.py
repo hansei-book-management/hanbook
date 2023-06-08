@@ -12,6 +12,9 @@ from app.data import *
 
 tags_metadata = [
     {
+      "name": "Book",
+    },
+    {
       "name": "Club",
     },
     {
@@ -38,6 +41,59 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/api/club/{cid}/book", tags=["Book"])
+async def read_book(cid: int, response: Response, auth: Optional[str] = Header(None)):
+  uid = check_auth(auth)
+  if not uid:
+    response.status_code = 401
+    return {"Unauthorized"}
+
+  with SessionContext() as session:
+    res = session.query(dbList).filter_by(uid = uid).filter_by(cid = cid)
+  if not len(list(res)):
+    response.status_code = 202
+    return {"Access denied"}
+
+  with SessionContext() as session:
+    res = session.query(dbBook).filter_by(cid = cid)
+  ret = []
+  for i in res:
+    tmp = {
+      "bid": i.bid,
+      "cid": i.cid,
+      "uid": i.uid,
+      "end": i.end,
+      "data": i.data
+    }
+    ret.append(tmp)
+  return parse_obj_as(List[BookList], ret)
+
+@app.post("/api/club/{cid}/book", tags=["Book"])
+async def add_book(cid: int, data: AddBook, response: Response, auth: Optional[str] = Header(None)):
+  uid = check_auth(auth)
+  if not uid:
+    response.status_code = 401
+    return {"Unauthorized"}
+
+  with SessionContext() as session:
+    res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
+  if not len(list(res)):
+    response.status_code = 400
+    return {"Access denied"}
+
+  book_data = "" # TODO
+
+  with SessionContext() as session:
+    Book = dbBook(cid=cid, data=book_data, uid=uid, end=0)
+    session.add(Book)
+    session.commit()
+
+  tmp = {
+    "isbn": data.isbn,
+    "cid": cid
+  }
+  return tmp
 
 @app.get("/api/club", tags=["Club"])
 async def read_club(response: Response, auth: Optional[str] = Header(None)):
