@@ -1,6 +1,11 @@
 # hanbook
 HANBOOK 백엔드 (Book management system)
 
+## API document
+See the `/docs` page
+
+FastAPI OpenAPI document
+
 ## Setup
 
 0. Install docker, docker-compose
