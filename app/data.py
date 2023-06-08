@@ -5,6 +5,9 @@ from pydantic import BaseModel, parse_obj_as
 class AddBook(BaseModel):
   isbn: str
 
+class ReturnBook(BaseModel):
+  image: str # base64
+
 class BookList(BaseModel):
   bid: int
   cid: int

@@ -6,7 +6,15 @@ from uuid import uuid4
 
 from app.config import *
 
+from base64 import b64decode
+
 DAY = 86400
+
+def image_decode(text):
+  try:
+    return b64decode(text)
+  except:
+    return False
 
 def uuid_gen():
   return uuid4().hex

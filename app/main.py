@@ -111,7 +111,7 @@ async def rent_book(cid: int, bid: int, response: Response, auth: Optional[str] 
   with SessionContext() as session:
     res = session.query(dbList).filter_by(uid = uid).filter_by(cid = cid)
   if len(list(res)):
-    if res[0].freeze != 0: 
+    if res[0].freeze > get_time(): 
       response.status_code = 400
       return {"Can't rent"}
 
@@ -121,6 +121,14 @@ async def rent_book(cid: int, bid: int, response: Response, auth: Optional[str] 
     response.status_code = 404
     return {"Can't rent"}
 
+  with SessionContext() as session:
+    res = session.query(dbBook).filter_by(bid = bid).filter_by(cid = cid).filter_by(uid = uid)
+  if len(list(res)):
+    for i in res:
+      if i.end != 0:
+        response.status_code = 400
+        return {"Can't rent"}
+
   end = get_time() + (DAY * 10)
 
   with SessionContext() as session:
@@ -128,8 +136,55 @@ async def rent_book(cid: int, bid: int, response: Response, auth: Optional[str] 
     Book.update({"uid": uid, "end": end})
     session.commit()
 
-  response.status_code = 204
+  response.status_code = 200
   return {"end": end}
+
+@app.patch("/api/club/{cid}/book/{bid}", tags=["Book"])
+async def return_book(cid: int, bid: int, data: ReturnBook, response: Response, auth: Optional[str] = Header(None)):
+  uid = check_auth(auth)
+  if not uid:
+    response.status_code = 401
+    return {"Unauthorized"}
+
+  with SessionContext() as session:
+    res = session.query(dbList).filter_by(uid = uid).filter_by(cid = cid)
+  if not len(list(res)):
+    response.status_code = 400
+    return {"Access denied"}
+
+  with SessionContext() as session:
+    res = session.query(dbBook).filter_by(bid = bid).filter_by(cid = cid)
+  if not len(list(res)):
+    response.status_code = 404
+    return {"Can't return"}
+  if res[0].end == 0:
+    response.status_code = 404
+    return {"Can't return"}
+  if res[0].end < get_time():
+    freeze = get_time() + (DAY * 10)
+    with SessionContext() as session:
+      ClubList = session.query(dbList).filter_by(uid = user_id).filter_by(cid = cid)
+      ClubList.update({"freeze": freeze})
+      session.commit()
+
+  save_file = image_decode(data.image)
+  if not save_file:
+    response.status_code = 400
+    return {"Access denied"}
+
+  with SessionContext() as session:
+    Book = session.query(dbBook).filter_by(cid = cid).filter_by(bid = bid)
+    Book.update({"end": 0})
+    session.commit()
+
+  file_name = str(get_time()) + "_" + str(bid)
+
+  fp = open("/code/uploads/" + file_name, "wb")
+  fp.write(save_file)
+  fp.close()
+
+  response.status_code = 204
+  return {}
 
 @app.delete("/api/club/{cid}/book/{bid}", tags=["Book"])
 async def delete_book(cid: int, bid: int, response: Response, auth: Optional[str] = Header(None)):
