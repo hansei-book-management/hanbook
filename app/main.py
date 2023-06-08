@@ -45,7 +45,7 @@ app.add_middleware(
 )
 
 @app.get("/api/book", tags=["Book"])
-async def add_book(query: str, response: Response, auth: Optional[str] = Header(None)):
+async def query_book(query: str, response: Response, auth: Optional[str] = Header(None)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
