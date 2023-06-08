@@ -95,7 +95,7 @@ async def add_book(cid: int, data: AddBook, response: Response, auth: Optional[s
   }
   return tmp
 
-@app.patch("/api/club/{cid}/book/{bid}", tags=["Book"])
+@app.post("/api/club/{cid}/book/{bid}", tags=["Book"])
 async def rent_book(cid: int, bid: int, response: Response, auth: Optional[str] = Header(None)):
   uid = check_auth(auth)
   if not uid:
