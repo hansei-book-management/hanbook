@@ -1,7 +1,5 @@
 # hanbook
-HANBOOK 백엔드
-
-Book management system
+HANBOOK 백엔드 (Book management system)
 
 ## Setup
 
