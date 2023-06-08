@@ -95,6 +95,35 @@ async def add_book(cid: int, data: AddBook, response: Response, auth: Optional[s
   }
   return tmp
 
+@app.patch("/api/club/{cid}/book/{bid}", tags=["Book"])
+async def rent_book(cid: int, bid: int, response: Response, auth: Optional[str] = Header(None)):
+  uid = check_auth(auth)
+  if not uid:
+    response.status_code = 401
+    return {"Unauthorized"}
+
+  with SessionContext() as session:
+    res = session.query(dbList).filter_by(uid = uid).filter_by(cid = cid)
+  if not len(list(res)):
+    response.status_code = 400
+    return {"Access denied"}
+
+  with SessionContext() as session:
+    res = session.query(dbBook).filter_by(bid = bid).filter_by(cid = cid).filter_by(end = 0)
+  if not len(list(res)):
+    response.status_code = 404
+    return {"Can't rent"}
+
+  end = get_time() + (DAY * 10)
+
+  with SessionContext() as session:
+    Book = session.query(dbBook).filter_by(cid = cid).filter_by(bid = bid)
+    Book.update({"uid": uid, "end": end})
+    session.commit()
+
+  response.status_code = 204
+  return {"end": end}
+
 @app.delete("/api/club/{cid}/book/{bid}", tags=["Book"])
 async def delete_book(cid: int, bid: int, response: Response, auth: Optional[str] = Header(None)):
   uid = check_auth(auth)

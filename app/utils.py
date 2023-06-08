@@ -6,6 +6,8 @@ from uuid import uuid4
 
 from app.config import *
 
+DAY = 86400
+
 def uuid_gen():
   return uuid4().hex
 
