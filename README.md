@@ -1,6 +1,8 @@
 # hanbook
 HANBOOK 백엔드
 
+Book management system
+
 ## Setup
 
 0. Install docker, docker-compose
