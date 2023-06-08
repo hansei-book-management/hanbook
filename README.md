@@ -1,5 +1,10 @@
 # hanbook
-HANBOOK 백엔드
+HANBOOK 백엔드 (Book management system)
+
+## API document
+See the `/docs` page
+
+FastAPI OpenAPI document
 
 ## Setup
 
