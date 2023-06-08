@@ -154,10 +154,19 @@ async def member(data: InviteToken, response: Response, auth: Optional[str] = He
     response.status_code = 401
     return {"Unauthorized"}
 
-  cid = check_invite(data.token)
-  if not cid:
+  uuid = data.token
+
+  with SessionContext() as session:
+    res = session.query(dbInvite).filter_by(uuid = uuid)
+  if not len(list(res)):
     response.status_code = 400
     return {"Access denied"}
+  if res[0].use < 1 or res[0].end < get_time():
+    response.status_code = 400
+    return {"Access denied"}
+
+  cid = res[0].cid
+  use = res[0].use
 
   with SessionContext() as session:
     res = session.query(dbList).filter_by(uid = uid).filter_by(cid = cid)
@@ -170,6 +179,11 @@ async def member(data: InviteToken, response: Response, auth: Optional[str] = He
   if not len(list(res)):
     response.status_code = 404
     return {"Club does not exist"}
+
+  with SessionContext() as session:
+    Invite = session.query(dbInvite).filter_by(uuid = uuid)
+    Invite.update({"use": use - 1})
+    session.commit()
 
   with SessionContext() as session:
     ClubList = dbList(uid=uid, cid=cid, name=res[0].name, freeze=0)
@@ -230,10 +244,20 @@ async def invite_member(cid: int, data: InviteMember, response: Response, auth: 
     response.status_code = 400
     return {"Access denied"}
 
-  token = sign_invite(cid, data.end)
+  while True:
+    uuid = uuid_gen()
+    with SessionContext() as session:
+      res = session.query(dbInvite).filter_by(uuid = uuid)
+    if not len(list(res)):
+      break
+
+  with SessionContext() as session:
+    Invite = dbInvite(uuid=uuid, cid=cid, end=data.end + get_time(), use=data.use)
+    session.add(Invite)
+    session.commit()
 
   tmp = {
-    "token": token,
+    "token": uuid,
   }
   return tmp
 

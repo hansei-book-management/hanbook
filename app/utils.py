@@ -6,29 +6,11 @@ from uuid import uuid4
 
 from app.config import *
 
-def api_keygen():
+def uuid_gen():
   return uuid4().hex
 
-def sign_invite(cid, end=2629743):
-  end += int(time())
-  tmp = {
-    "type": "invite",
-    "cid": cid,
-    "end": end,
-  }
-  token = jwt.encode(tmp, SECRET, algorithm="HS256")
-  return token
-
-def check_invite(token):
-  unix_time = int(time())
-  try:
-    tmp = jwt.decode(token, SECRET, algorithms="HS256")
-    if tmp["type"] == "invite" and tmp["end"] > unix_time:
-      return tmp["cid"]
-    else:
-      return False
-  except:
-    return False
+def get_time():
+  return int(time())
 
 def sign_auth(user_id):
   end = int(time()) + 2629743 # 1 Month

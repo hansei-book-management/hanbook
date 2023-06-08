@@ -26,6 +26,7 @@ class InviteToken(BaseModel):
 
 class InviteMember(BaseModel):
   end: int
+  use: int
 
 class Freeze(BaseModel):
   freeze: int

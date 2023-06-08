@@ -34,6 +34,15 @@ class dbList(Base):
   freeze = Column(Integer, nullable=False)
   name = Column(String, nullable=False)
 
+class dbInvite(Base):
+  __tablename__ = "invites"
+
+  uuid = Column(String, primary_key=True)
+
+  cid = Column(Integer, ForeignKey("clubs.cid"))
+  end = Column(Integer, nullable=False)
+  use = Column(Integer, nullable=False)
+
 Base.metadata.create_all(engine)
 
 Session = sessionmaker(bind=engine)
