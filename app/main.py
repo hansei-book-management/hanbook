@@ -10,6 +10,8 @@ from app.model import *
 from app.utils import *
 from app.data import *
 
+from app.ext.naver_book_api import *
+
 tags_metadata = [
     {
       "name": "Book",
@@ -41,6 +43,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/api/book", tags=["Book"])
+async def add_book(query: str, response: Response, auth: Optional[str] = Header(None)):
+  uid = check_auth(auth)
+  if not uid:
+    response.status_code = 401
+    return {"Unauthorized"}
+
+  with SessionContext() as session:
+    res = session.query(dbClub).filter_by(director = uid)
+  if not len(list(res)):
+    response.status_code = 400
+    return {"Access denied"}
+
+  return {"res": query_book(query)}
+
 
 @app.get("/api/club/{cid}/book", tags=["Book"])
 async def read_book(cid: int, response: Response, auth: Optional[str] = Header(None)):
@@ -82,7 +100,10 @@ async def add_book(cid: int, data: AddBook, response: Response, auth: Optional[s
     response.status_code = 400
     return {"Access denied"}
 
-  book_data = "" # TODO
+  book_data = query_book_isbn(data.isbn)
+  if not book_data:
+    response.status_code = 404
+    return {"Not found"}
 
   with SessionContext() as session:
     Book = dbBook(cid=cid, data=book_data, uid=uid, end=0)
