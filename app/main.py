@@ -109,6 +109,13 @@ async def rent_book(cid: int, bid: int, response: Response, auth: Optional[str] 
     return {"Access denied"}
 
   with SessionContext() as session:
+    res = session.query(dbList).filter_by(uid = uid).filter_by(cid = cid)
+  if len(list(res)):
+    if res[0].freeze != 0: 
+      response.status_code = 400
+      return {"Can't rent"}
+
+  with SessionContext() as session:
     res = session.query(dbBook).filter_by(bid = bid).filter_by(cid = cid).filter_by(end = 0)
   if not len(list(res)):
     response.status_code = 404
