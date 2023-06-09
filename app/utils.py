@@ -23,7 +23,7 @@ def get_time():
   return int(time())
 
 def sign_auth(user_id):
-  end = int(time()) + 2629743 # 1 Month
+  end = int(time()) + DAY
   tmp = {
     "id": user_id,
     "type": "auth",
@@ -45,7 +45,7 @@ def check_auth(token):
     return False
 
 def sign_admin(user_id):
-  end = int(time()) + 2629743 # 1 Month
+  end = int(time()) + DAY
   tmp = { 
     "id": user_id,
     "type": "auth",
