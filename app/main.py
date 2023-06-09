@@ -12,6 +12,8 @@ from app.data import *
 
 from app.ext.naver_book_api import *
 
+Refresh_token = {} # TODO : redis
+
 tags_metadata = [
     {
       "name": "Book",
@@ -491,6 +493,27 @@ async def delete_member(cid: int, user_id: str, response: Response, auth: Option
   response.status_code = 204
   return {}
 
+@app.get("/api/auth", tags=["Authentication"])
+async def read_club(response: Response, refresh: Optional[str] = Header(None)):
+  if refresh not in Refresh_token:
+    response.status_code = 401
+    return {"Auth fail"}
+  
+  uid = Refresh_token[refresh]
+
+  with SessionContext() as session:
+    res = session.query(dbUser).filter_by(uid = uid)
+  if len(list(res)):
+    if res[0].role == "admin":
+      auth = sign_admin(res[0].uid)
+    else:
+      auth = sign_auth(res[0].uid)
+    response.status_code = 201
+    return {"auth": auth}
+  else:
+    response.status_code = 401
+    return {"Auth fail"}
+
 @app.post("/api/auth", tags=["Authentication"])
 async def sign_in(data: UserData, response: Response):
   with SessionContext() as session:
@@ -502,7 +525,14 @@ async def sign_in(data: UserData, response: Response):
     else:
       auth = sign_auth(res[0].uid)
     response.status_code = 201
-    return {"auth": auth}
+    
+    while True:
+      uuid = uuid_gen()
+      if uuid not in Refresh_token:
+        break
+    Refresh_token[uuid] = data.uid
+    
+    return {"auth": auth, "refresh": uuid}
   else:
     response.status_code = 401
     return {"Auth fail"}
@@ -559,15 +589,19 @@ async def create_account(data: UserSignUp, response: Response, admin: Optional[s
     session.add(User)
     session.commit()
   response.status_code = 201
-  tmp = {
-    "uid": data.uid,
-    "passwd": data.passwd,
-    "role": user_role,
-    "name": data.name,
-    "num": data.num,
-    "phone": data.phone
-  }
-  return tmp
+
+  if user_role == "admin":
+    auth = sign_admin(data.uid)
+  else:
+    auth = sign_auth(data.uid)
+
+  while True:
+    uuid = uuid_gen()
+    if uuid not in Refresh_token:
+      break
+  Refresh_token[uuid] = data.uid
+
+  return {"auth": auth, "refresh": uuid}
 
 @app.put("/api/user/{uid}", tags=["User"])
 async def update_account(uid: str, data: UserPasswd, response: Response, auth: Optional[str] = Header(None)):

@@ -3,7 +3,7 @@ version: '3.7'
 services:
   web:
     build: .
-    command: bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; gunicorn --capture-output --log-level debug -k uvicorn.workers.UvicornWorker --access-logfile ./gunicorn-access.log app.main:app --bind 0.0.0.0:8000 --workers 4'
+    command: bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; gunicorn --capture-output --log-level debug -k uvicorn.workers.UvicornWorker --access-logfile ./gunicorn-access.log app.main:app --bind 0.0.0.0:8000 --workers 1'
     volumes:
       - ./app:/code/app
       - ./uploads:/code/uploads
