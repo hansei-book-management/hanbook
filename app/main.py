@@ -51,7 +51,7 @@ async def query_book(query: str, response: Response, auth: Optional[str] = Heade
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"Unauthorized"}
+    return {"message": "Unauthorized"}
 
   with SessionContext() as session:
     res = session.query(dbClub).filter_by(director = uid)
@@ -59,7 +59,7 @@ async def query_book(query: str, response: Response, auth: Optional[str] = Heade
     response.status_code = 400
     return {"Access denied"}
 
-  return {"res": query_book(query)}
+  return {"result": query_book(query)}
 
 
 @app.get("/api/club/{cid}/book", tags=["Book"])
@@ -67,13 +67,13 @@ async def read_book(cid: int, response: Response, auth: Optional[str] = Header(N
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"Unauthorized"}
+    return {"message": "Unauthorized"}
 
   with SessionContext() as session:
     res = session.query(dbList).filter_by(uid = uid).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 202
-    return {"Access denied"}
+    return {"message": "Access denied"}
 
   with SessionContext() as session:
     res = session.query(dbBook).filter_by(cid = cid)
@@ -94,18 +94,18 @@ async def add_book(cid: int, data: AddBook, response: Response, auth: Optional[s
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"Unauthorized"}
+    return {"message": "Unauthorized"}
 
   with SessionContext() as session:
     res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 400
-    return {"Access denied"}
+    return {"message": "Access denied"}
 
   book_data = query_book_isbn(data.isbn)
   if not book_data:
     response.status_code = 404
-    return {"Not found"}
+    return {"message": "Not found"}
 
   with SessionContext() as session:
     Book = dbBook(cid=cid, data=book_data, uid=uid, end=0)
@@ -116,33 +116,33 @@ async def add_book(cid: int, data: AddBook, response: Response, auth: Optional[s
     "isbn": data.isbn,
     "cid": cid
   }
-  return tmp
+  return {"result": tmp}
 
 @app.post("/api/club/{cid}/book/{bid}", tags=["Book"])
 async def rent_book(cid: int, bid: int, response: Response, auth: Optional[str] = Header(None)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"Unauthorized"}
+    return {"message": "Unauthorized"}
 
   with SessionContext() as session:
     res = session.query(dbList).filter_by(uid = uid).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 400
-    return {"Access denied"}
+    return {"message": "Access denied"}
 
   with SessionContext() as session:
     res = session.query(dbList).filter_by(uid = uid).filter_by(cid = cid)
   if len(list(res)):
     if res[0].freeze > get_time(): 
       response.status_code = 400
-      return {"Can't rent"}
+      return {"message": "Can't rent"}
 
   with SessionContext() as session:
     res = session.query(dbBook).filter_by(bid = bid).filter_by(cid = cid).filter_by(end = 0)
   if not len(list(res)):
     response.status_code = 404
-    return {"Can't rent"}
+    return {"message": "Can't rent"}
 
   with SessionContext() as session:
     res = session.query(dbBook).filter_by(bid = bid).filter_by(cid = cid).filter_by(uid = uid)
@@ -150,7 +150,7 @@ async def rent_book(cid: int, bid: int, response: Response, auth: Optional[str] 
     for i in res:
       if i.end != 0:
         response.status_code = 400
-        return {"Can't rent"}
+        return {"message": "Can't rent"}
 
   end = get_time() + (DAY * 10)
 
@@ -160,29 +160,29 @@ async def rent_book(cid: int, bid: int, response: Response, auth: Optional[str] 
     session.commit()
 
   response.status_code = 200
-  return {"end": end}
+  return {"result": end}
 
 @app.patch("/api/club/{cid}/book/{bid}", tags=["Book"])
 async def return_book(cid: int, bid: int, data: ReturnBook, response: Response, auth: Optional[str] = Header(None)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"Unauthorized"}
+    return {"message": "Unauthorized"}
 
   with SessionContext() as session:
     res = session.query(dbList).filter_by(uid = uid).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 400
-    return {"Access denied"}
+    return {"message": "Access denied"}
 
   with SessionContext() as session:
     res = session.query(dbBook).filter_by(bid = bid).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 404
-    return {"Can't return"}
+    return {"message": "Can't return"}
   if res[0].end == 0:
     response.status_code = 404
-    return {"Can't return"}
+    return {"message": "Can't return"}
   if res[0].end < get_time():
     freeze = get_time() + (DAY * 10)
     with SessionContext() as session:
@@ -193,7 +193,7 @@ async def return_book(cid: int, bid: int, data: ReturnBook, response: Response, 
   save_file = image_decode(data.image)
   if not save_file:
     response.status_code = 400
-    return {"Access denied"}
+    return {"message": "Access denied"}
 
   with SessionContext() as session:
     Book = session.query(dbBook).filter_by(cid = cid).filter_by(bid = bid)
@@ -214,13 +214,13 @@ async def delete_book(cid: int, bid: int, response: Response, auth: Optional[str
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"Unauthorized"}
+    return {"message": "Unauthorized"}
 
   with SessionContext() as session:
     res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 400
-    return {"Access denied"}
+    return {"message": "Access denied"}
 
   with SessionContext() as session:
     Book = session.query(dbBook).filter_by(cid = cid).filter_by(bid = bid)
@@ -235,7 +235,7 @@ async def read_club(response: Response, auth: Optional[str] = Header(None)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"Unauthorized"}
+    return {"message": "Unauthorized"}
 
   with SessionContext() as session:
     res = session.query(dbList).filter_by(uid = uid).all()
@@ -254,7 +254,7 @@ async def create_club(data: CreateClub, response: Response, auth: Optional[str] 
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"Unauthorized"}
+    return {"message": "Unauthorized"}
 
   with SessionContext() as session:
     Club = dbClub(name=data.name, director=uid)
@@ -275,26 +275,26 @@ async def create_club(data: CreateClub, response: Response, auth: Optional[str] 
     "name": data.name,
     "director": uid
   }
-  return tmp
+  return {"result": tmp}
 
 @app.put("/api/club/{cid}", tags=["Club"])
 async def update_club(cid: int, data: UpdateClub, response: Response, auth: Optional[str] = Header(None)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"Unauthorized"}
+    return {"message": "Unauthorized"}
 
   with SessionContext() as session:
     res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 400
-    return {"Access denied"}
+    return {"message": "Access denied"}
 
   with SessionContext() as session:
     res = session.query(dbList).filter_by(uid = data.director, cid = cid)
   if not len(list(res)):
     response.status_code = 404
-    return {"User does not exist"}
+    return {"message": "User does not exist"}
 
   with SessionContext() as session:
     Club = session.query(dbClub).filter_by(cid = cid)
@@ -310,20 +310,20 @@ async def update_club(cid: int, data: UpdateClub, response: Response, auth: Opti
     "name": data.name,
     "director": data.director
   }
-  return tmp
+  return {"result": tmp}
 
 @app.delete("/api/club/{cid}", tags=["Club"])
 async def delete_club(cid: int, response: Response, auth: Optional[str] = Header(None)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"Unauthorized"}
+    return {"message": "Unauthorized"}
 
   with SessionContext() as session:
     res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 400
-    return {"Access denied"}
+    return {"message": "Access denied"}
 
   with SessionContext() as session:
     ClubList = session.query(dbList).filter_by(cid = cid)
@@ -343,7 +343,7 @@ async def member(data: InviteToken, response: Response, auth: Optional[str] = He
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"Unauthorized"}
+    return {"message": "Unauthorized"}
 
   uuid = data.token
 
@@ -351,10 +351,10 @@ async def member(data: InviteToken, response: Response, auth: Optional[str] = He
     res = session.query(dbInvite).filter_by(uuid = uuid)
   if not len(list(res)):
     response.status_code = 400
-    return {"Access denied"}
+    return {"message": "Access denied"}
   if res[0].use < 1 or res[0].end < get_time():
     response.status_code = 400
-    return {"Access denied"}
+    return {"message": "Access denied"}
 
   cid = res[0].cid
   use = res[0].use
@@ -363,13 +363,13 @@ async def member(data: InviteToken, response: Response, auth: Optional[str] = He
     res = session.query(dbList).filter_by(uid = uid).filter_by(cid = cid)
   if len(list(res)):
     response.status_code = 202
-    return {"Already uid exists"}
+    return {"message": "Already uid exists"}
 
   with SessionContext() as session:
     res = session.query(dbClub).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 404
-    return {"Club does not exist"}
+    return {"message": "Club does not exist"}
 
   with SessionContext() as session:
     Invite = session.query(dbInvite).filter_by(uuid = uuid)
@@ -385,20 +385,20 @@ async def member(data: InviteToken, response: Response, auth: Optional[str] = He
     "name": res[0].name,
     "cid": cid,
   }
-  return tmp
+  return {"result": tmp}
 
 @app.get("/api/club/{cid}/member", tags=["Member"])
 async def read_member(cid: int, response: Response, auth: Optional[str] = Header(None)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"Unauthorized"}
+    return {"message": "Unauthorized"}
 
   with SessionContext() as session:
     res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 400
-    return {"Access denied"}
+    return {"message": "Access denied"}
 
   with SessionContext() as session:
     res = session.query(dbList).filter_by(cid = cid)
@@ -427,13 +427,13 @@ async def invite_member(cid: int, data: InviteMember, response: Response, auth: 
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"Unauthorized"}
+    return {"message": "Unauthorized"}
 
   with SessionContext() as session:
     res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 400
-    return {"Access denied"}
+    return {"message":"Access denied"}
 
   while True:
     uuid = uuid_gen()
@@ -450,7 +450,7 @@ async def invite_member(cid: int, data: InviteMember, response: Response, auth: 
   tmp = {
     "token": uuid,
   }
-  return tmp
+  return {"result": tmp}
 
 
 @app.patch("/api/club/{cid}/member/{user_id}", tags=["Member"])
@@ -458,13 +458,13 @@ async def patch_member(cid: int, user_id: str, data: Freeze, response: Response,
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"Unauthorized"}
+    return {"message":"Unauthorized"}
 
   with SessionContext() as session:
     res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 400
-    return {"Access denied"}
+    return {"message":"Access denied"}
 
   with SessionContext() as session:
     ClubList = session.query(dbList).filter_by(uid = user_id).filter_by(cid = cid)
@@ -478,13 +478,13 @@ async def delete_member(cid: int, user_id: str, response: Response, auth: Option
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"Unauthorized"}
+    return {"message": "Unauthorized"}
 
   with SessionContext() as session:
     res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 400
-    return {"Access denied"}
+    return {"message": "Access denied"}
 
   with SessionContext() as session:
     ClubList = session.query(dbList).filter_by(uid = user_id).filter_by(cid = cid)
@@ -497,7 +497,7 @@ async def delete_member(cid: int, user_id: str, response: Response, auth: Option
 async def read_club(response: Response, refresh: Optional[str] = Header(None)):
   if refresh not in Refresh_token:
     response.status_code = 401
-    return {"Auth fail"}
+    return {"message": "Auth fail"}
   
   uid = Refresh_token[refresh]
 
@@ -509,10 +509,10 @@ async def read_club(response: Response, refresh: Optional[str] = Header(None)):
     else:
       auth = sign_auth(res[0].uid)
     response.status_code = 201
-    return {"auth": auth}
+    return {"result": auth}
   else:
     response.status_code = 401
-    return {"Auth fail"}
+    return {"message": "Auth fail"}
 
 @app.post("/api/auth", tags=["Authentication"])
 async def sign_in(data: UserData, response: Response):
@@ -532,24 +532,24 @@ async def sign_in(data: UserData, response: Response):
         break
     Refresh_token[uuid] = data.uid
     
-    return {"auth": auth, "refresh": uuid}
+    return {"result": {"auth": auth, "refresh": uuid}}
   else:
     response.status_code = 401
-    return {"Auth fail"}
+    return {"message": "Auth fail"}
 
 @app.patch("/api/auth", tags=["Authentication"])
 async def change_passwd(data: UserPasswd, response: Response, auth: Optional[str] = Header(None)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"Unauthorized"}
+    return {"message": "Unauthorized"}
 
   with SessionContext() as session:
     hash_passwd = hashgen(data.passwd)
     User = session.query(dbUser).filter_by(uid = uid)
     User.update({"passwd": hash_passwd})
     session.commit()
-  return {"passwd": data.passwd}
+  return {"result": data.passwd}
 
 @app.get("/api/user", tags=["User"])
 async def read_account(response: Response, auth: Optional[str] = Header(None)):
@@ -578,7 +578,7 @@ async def create_account(data: UserSignUp, response: Response, admin: Optional[s
     res = session.query(dbUser).filter_by(uid = data.uid)
   if len(list(res)):
     response.status_code = 202
-    return {"Already uid exists"}
+    return {"message": "Already uid exists"}
   if admin == ADMIN_KEY:
     user_role = "admin"
   else:
@@ -601,14 +601,14 @@ async def create_account(data: UserSignUp, response: Response, admin: Optional[s
       break
   Refresh_token[uuid] = data.uid
 
-  return {"auth": auth, "refresh": uuid}
+  return {"result": {"auth": auth, "refresh": uuid}}
 
 @app.put("/api/user/{uid}", tags=["User"])
 async def update_account(uid: str, data: UserPasswd, response: Response, auth: Optional[str] = Header(None)):
   admin = check_admin(auth)
   if not admin:
     response.status_code = 401
-    return {"Auth fail"}
+    return {"message":"Auth fail"}
 
   with SessionContext() as session:
     res = session.query(dbUser).filter_by(uid = uid)
@@ -620,14 +620,14 @@ async def update_account(uid: str, data: UserPasswd, response: Response, auth: O
     User = session.query(dbUser).filter_by(uid = uid)
     User.update({"passwd": hash_passwd})
     session.commit()
-  return {"passwd": data.passwd}
+  return {"result": data.passwd}
 
 @app.delete("/api/user/{uid}", tags=["User"])
 async def delete_account(uid: str, response: Response, auth: Optional[str] = Header(None)):
   admin = check_admin(auth)
   if not admin:
     response.status_code = 401
-    return {"Auth fail"}
+    return {"message": "Auth fail"}
 
   with SessionContext() as session:
     User = session.query(dbUser).filter_by(uid = uid)
