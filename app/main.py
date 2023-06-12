@@ -51,13 +51,13 @@ async def query_book(query: str, response: Response, auth: Optional[str] = Heade
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"message": "Unauthorized"}
+    return {"message": "로그인이 필요합니다."}
 
   with SessionContext() as session:
     res = session.query(dbClub).filter_by(director = uid)
   if not len(list(res)):
     response.status_code = 400
-    return {"Access denied"}
+    return {"동아리 부장만 사용할 수 있습니다."}
 
   return {"result": query_book(query)}
 
@@ -67,13 +67,13 @@ async def read_book(cid: int, response: Response, auth: Optional[str] = Header(N
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"message": "Unauthorized"}
+    return {"message": "로그인이 필요합니다."}
 
   with SessionContext() as session:
     res = session.query(dbList).filter_by(uid = uid).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 202
-    return {"message": "Access denied"}
+    return {"message": "자신이 속한 동아리에만 접근할 수 있습니다."}
 
   with SessionContext() as session:
     res = session.query(dbBook).filter_by(cid = cid)
@@ -94,18 +94,18 @@ async def add_book(cid: int, data: AddBook, response: Response, auth: Optional[s
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"message": "Unauthorized"}
+    return {"message": "로그인이 필요합니다."}
 
   with SessionContext() as session:
     res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 400
-    return {"message": "Access denied"}
+    return {"message": "자신이 부장인 동아리에만 도서를 추가할 수 있습니다."}
 
   book_data = query_book_isbn(data.isbn)
   if not book_data:
     response.status_code = 404
-    return {"message": "Not found"}
+    return {"message": "해당하는 도서를 찾을 수 없습니다."}
 
   with SessionContext() as session:
     Book = dbBook(cid=cid, data=book_data, uid=uid, end=0)
@@ -123,26 +123,26 @@ async def rent_book(cid: int, bid: int, response: Response, auth: Optional[str] 
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"message": "Unauthorized"}
+    return {"message": "로그인이 필요합니다."}
 
   with SessionContext() as session:
     res = session.query(dbList).filter_by(uid = uid).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 400
-    return {"message": "Access denied"}
+    return {"message": "자신이 속한 동아리에서만 도서를 대여할 수 있습니다."}
 
   with SessionContext() as session:
     res = session.query(dbList).filter_by(uid = uid).filter_by(cid = cid)
   if len(list(res)):
     if res[0].freeze > get_time(): 
       response.status_code = 400
-      return {"message": "Can't rent"}
+      return {"message": "대출한 도서를 기간 내에 반납하지 않아 대여가 일시 정지되었어요."}
 
   with SessionContext() as session:
     res = session.query(dbBook).filter_by(bid = bid).filter_by(cid = cid).filter_by(end = 0)
   if not len(list(res)):
     response.status_code = 404
-    return {"message": "Can't rent"}
+    return {"message": "해당 도서를 대여할 수 없습니다."}
 
   with SessionContext() as session:
     res = session.query(dbBook).filter_by(bid = bid).filter_by(cid = cid).filter_by(uid = uid)
@@ -150,7 +150,7 @@ async def rent_book(cid: int, bid: int, response: Response, auth: Optional[str] 
     for i in res:
       if i.end != 0:
         response.status_code = 400
-        return {"message": "Can't rent"}
+        return {"message": "이미 대여한 도서입니다."}
 
   end = get_time() + (DAY * 10)
 
@@ -167,22 +167,22 @@ async def return_book(cid: int, bid: int, data: ReturnBook, response: Response, 
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"message": "Unauthorized"}
+    return {"message": "로그인이 필요합니다."}
 
   with SessionContext() as session:
     res = session.query(dbList).filter_by(uid = uid).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 400
-    return {"message": "Access denied"}
+    return {"message": "자신이 속한 동아리에만 도서를 반납할 수 있습니다."}
 
   with SessionContext() as session:
     res = session.query(dbBook).filter_by(bid = bid).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 404
-    return {"message": "Can't return"}
+    return {"message": "해당하는 도서를 찾을 수 없습니다."}
   if res[0].end == 0:
     response.status_code = 404
-    return {"message": "Can't return"}
+    return {"message": "이미 반납 처리된 도서입니다."}
   if res[0].end < get_time():
     freeze = get_time() + (DAY * 10)
     with SessionContext() as session:
@@ -193,7 +193,7 @@ async def return_book(cid: int, bid: int, data: ReturnBook, response: Response, 
   save_file = image_decode(data.image)
   if not save_file:
     response.status_code = 400
-    return {"message": "Access denied"}
+    return {"message": "이미지 업로드에 실패하였습니다."}
 
   with SessionContext() as session:
     Book = session.query(dbBook).filter_by(cid = cid).filter_by(bid = bid)
@@ -214,13 +214,13 @@ async def delete_book(cid: int, bid: int, response: Response, auth: Optional[str
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"message": "Unauthorized"}
+    return {"message": "로그인이 필요합니다."}
 
   with SessionContext() as session:
     res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 400
-    return {"message": "Access denied"}
+    return {"message": "자신이 부장인 동아리의 도서만 삭제할 수 있습니다."}
 
   with SessionContext() as session:
     Book = session.query(dbBook).filter_by(cid = cid).filter_by(bid = bid)
@@ -235,7 +235,7 @@ async def read_club(response: Response, auth: Optional[str] = Header(None)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"message": "Unauthorized"}
+    return {"message": "로그인이 필요합니다."}
 
   with SessionContext() as session:
     res = session.query(dbList).filter_by(uid = uid).all()
@@ -254,7 +254,7 @@ async def create_club(data: CreateClub, response: Response, auth: Optional[str] 
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"message": "Unauthorized"}
+    return {"message": "로그인이 필요합니다."}
 
   with SessionContext() as session:
     Club = dbClub(name=data.name, director=uid)
@@ -282,19 +282,19 @@ async def update_club(cid: int, data: UpdateClub, response: Response, auth: Opti
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"message": "Unauthorized"}
+    return {"message": "로그인이 필요합니다."}
 
   with SessionContext() as session:
     res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 400
-    return {"message": "Access denied"}
+    return {"message": "자신이 부장인 동아리의 정보만 수정할 수 있습니다."}
 
   with SessionContext() as session:
     res = session.query(dbList).filter_by(uid = data.director, cid = cid)
   if not len(list(res)):
     response.status_code = 404
-    return {"message": "User does not exist"}
+    return {"message": "부장으로 임명할 사용자를 부원 중에서 찾을 수 없습니다."}
 
   with SessionContext() as session:
     Club = session.query(dbClub).filter_by(cid = cid)
@@ -317,13 +317,13 @@ async def delete_club(cid: int, response: Response, auth: Optional[str] = Header
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"message": "Unauthorized"}
+    return {"message": "로그인이 필요합니다."}
 
   with SessionContext() as session:
     res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 400
-    return {"message": "Access denied"}
+    return {"message": "자신이 부장인 동아리만 삭제할 수 있습니다."}
 
   with SessionContext() as session:
     ClubList = session.query(dbList).filter_by(cid = cid)
@@ -343,7 +343,7 @@ async def member(data: InviteToken, response: Response, auth: Optional[str] = He
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"message": "Unauthorized"}
+    return {"message": "로그인이 필요합니다."}
 
   uuid = data.token
 
@@ -351,10 +351,10 @@ async def member(data: InviteToken, response: Response, auth: Optional[str] = He
     res = session.query(dbInvite).filter_by(uuid = uuid)
   if not len(list(res)):
     response.status_code = 400
-    return {"message": "Access denied"}
+    return {"message": "초대 코드가 잘못되었습니다."}
   if res[0].use < 1 or res[0].end < get_time():
     response.status_code = 400
-    return {"message": "Access denied"}
+    return {"message": "만료된 초대 코드입니다."}
 
   cid = res[0].cid
   use = res[0].use
@@ -363,13 +363,13 @@ async def member(data: InviteToken, response: Response, auth: Optional[str] = He
     res = session.query(dbList).filter_by(uid = uid).filter_by(cid = cid)
   if len(list(res)):
     response.status_code = 202
-    return {"message": "Already uid exists"}
+    return {"message": "이미 가입한 동아리입니다."}
 
   with SessionContext() as session:
     res = session.query(dbClub).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 404
-    return {"message": "Club does not exist"}
+    return {"message": "이미 삭제된 동아리입니다."}
 
   with SessionContext() as session:
     Invite = session.query(dbInvite).filter_by(uuid = uuid)
@@ -392,13 +392,13 @@ async def read_member(cid: int, response: Response, auth: Optional[str] = Header
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"message": "Unauthorized"}
+    return {"message": "로그인이 필요합니다."}
 
   with SessionContext() as session:
     res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 400
-    return {"message": "Access denied"}
+    return {"message": "자신이 부장인 동아리의 부원 명단만을 확인할 수 있습니다."}
 
   with SessionContext() as session:
     res = session.query(dbList).filter_by(cid = cid)
@@ -427,13 +427,13 @@ async def invite_member(cid: int, data: InviteMember, response: Response, auth: 
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"message": "Unauthorized"}
+    return {"message": "로그인이 필요합니다."}
 
   with SessionContext() as session:
     res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 400
-    return {"message":"Access denied"}
+    return {"message":"자신이 부장인 동아리의 초대 코드만 생성할 수 있습니다."}
 
   while True:
     uuid = uuid_gen()
@@ -458,13 +458,13 @@ async def patch_member(cid: int, user_id: str, data: Freeze, response: Response,
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"message":"Unauthorized"}
+    return {"message":"로그인이 필요합니다."}
 
   with SessionContext() as session:
     res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 400
-    return {"message":"Access denied"}
+    return {"message":"자신이 부장인 동아리에 소속된 부원만 대출 정지 해제가 가능합니다."}
 
   with SessionContext() as session:
     ClubList = session.query(dbList).filter_by(uid = user_id).filter_by(cid = cid)
@@ -478,13 +478,17 @@ async def delete_member(cid: int, user_id: str, response: Response, auth: Option
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"message": "Unauthorized"}
+    return {"message": "로그인이 필요합니다."}
+
+  if uid == user_id:
+    response.status_code = 400
+    return {"message": "자기 자신은 추방할 수 없습니다."}
 
   with SessionContext() as session:
     res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 400
-    return {"message": "Access denied"}
+    return {"message": "자신이 부장인 동아리에서만 부원을 추방할 수 있습니다."}
 
   with SessionContext() as session:
     ClubList = session.query(dbList).filter_by(uid = user_id).filter_by(cid = cid)
@@ -497,7 +501,7 @@ async def delete_member(cid: int, user_id: str, response: Response, auth: Option
 async def read_club(response: Response, refresh: Optional[str] = Header(None)):
   if refresh not in Refresh_token:
     response.status_code = 401
-    return {"message": "Auth fail"}
+    return {"message": "로그인 만료"}
   
   uid = Refresh_token[refresh]
 
@@ -512,7 +516,7 @@ async def read_club(response: Response, refresh: Optional[str] = Header(None)):
     return {"result": auth}
   else:
     response.status_code = 401
-    return {"message": "Auth fail"}
+    return {"message": "사용자가 삭제되었습니다."}
 
 @app.post("/api/auth", tags=["Authentication"])
 async def sign_in(data: UserData, response: Response):
@@ -535,14 +539,14 @@ async def sign_in(data: UserData, response: Response):
     return {"result": {"auth": auth, "refresh": uuid}}
   else:
     response.status_code = 401
-    return {"message": "Auth fail"}
+    return {"message": "로그인 실패"}
 
 @app.patch("/api/auth", tags=["Authentication"])
 async def change_passwd(data: UserPasswd, response: Response, auth: Optional[str] = Header(None)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
-    return {"message": "Unauthorized"}
+    return {"message": "로그인이 필요합니다."}
 
   with SessionContext() as session:
     hash_passwd = hashgen(data.passwd)
@@ -556,7 +560,7 @@ async def read_account(response: Response, auth: Optional[str] = Header(None)):
   admin = check_admin(auth)
   if not admin:
     response.status_code = 401
-    return {"Auth fail"}
+    return {"관리자 전용 기능입니다."}
 
   with SessionContext() as session:
     res = session.query(dbUser).all()
@@ -578,7 +582,7 @@ async def create_account(data: UserSignUp, response: Response, admin: Optional[s
     res = session.query(dbUser).filter_by(uid = data.uid)
   if len(list(res)):
     response.status_code = 202
-    return {"message": "Already uid exists"}
+    return {"message": "이미 있는 아이디입니다."}
   if admin == ADMIN_KEY:
     user_role = "admin"
   else:
@@ -608,7 +612,7 @@ async def update_account(uid: str, data: UserPasswd, response: Response, auth: O
   admin = check_admin(auth)
   if not admin:
     response.status_code = 401
-    return {"message":"Auth fail"}
+    return {"message":"관리자 전용 기능입니다."}
 
   with SessionContext() as session:
     res = session.query(dbUser).filter_by(uid = uid)
@@ -627,7 +631,7 @@ async def delete_account(uid: str, response: Response, auth: Optional[str] = Hea
   admin = check_admin(auth)
   if not admin:
     response.status_code = 401
-    return {"message": "Auth fail"}
+    return {"message": "관리자 전용 기능입니다."}
 
   with SessionContext() as session:
     User = session.query(dbUser).filter_by(uid = uid)
