@@ -2,6 +2,7 @@ from typing import List, Optional
 
 from fastapi import FastAPI, Response, Header, status
 from pydantic import BaseModel, parse_obj_as
+import uvicorn
 
 from starlette.middleware.cors import CORSMiddleware
 
@@ -639,3 +640,6 @@ async def delete_account(uid: str, response: Response, auth: Optional[str] = Hea
     session.commit()
   response.status_code = 204
   return {}
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0")
