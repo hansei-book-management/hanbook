@@ -87,7 +87,7 @@ async def read_book(cid: int, response: Response, auth: Optional[str] = Header(N
       "data": i.data
     }
     ret.append(tmp)
-  return parse_obj_as(List[BookList], ret)
+  return {"result": parse_obj_as(List[BookList], ret)}
 
 @app.post("/api/club/{cid}/book", tags=["Book"])
 async def add_book(cid: int, data: AddBook, response: Response, auth: Optional[str] = Header(None)):
@@ -247,7 +247,7 @@ async def read_club(response: Response, auth: Optional[str] = Header(None)):
       "freeze": i.freeze
     }
     ret.append(tmp)
-  return parse_obj_as(List[ClubList], ret)
+  return {"result": parse_obj_as(List[ClubList], ret)}
 
 @app.post("/api/club", tags=["Club"])
 async def create_club(data: CreateClub, response: Response, auth: Optional[str] = Header(None)):
@@ -420,7 +420,7 @@ async def read_member(cid: int, response: Response, auth: Optional[str] = Header
       "freeze": i[1]
     }
     ret.append(tmp)
-  return parse_obj_as(List[ClubUserList], ret)
+  return {"result": parse_obj_as(List[ClubUserList], ret)}
 
 @app.post("/api/club/{cid}/member", tags=["Member"])
 async def invite_member(cid: int, data: InviteMember, response: Response, auth: Optional[str] = Header(None)):
@@ -471,7 +471,7 @@ async def patch_member(cid: int, user_id: str, data: Freeze, response: Response,
     ClubList.update({"freeze": data.freeze})
     session.commit()
   response.status_code = 204
-  return {"freeze": data.freeze}
+  return {"result": data.freeze}
 
 @app.delete("/api/club/{cid}/member/{user_id}", tags=["Member"])
 async def delete_member(cid: int, user_id: str, response: Response, auth: Optional[str] = Header(None)):
@@ -574,7 +574,7 @@ async def read_account(response: Response, auth: Optional[str] = Header(None)):
       "phone": i.phone
     }
     ret.append(tmp)
-  return parse_obj_as(List[UserList], ret)
+  return {"result": parse_obj_as(List[UserList], ret)}
 
 @app.post("/api/user", tags=["User"])
 async def create_account(data: UserSignUp, response: Response, admin: Optional[str] = Header(None)):
