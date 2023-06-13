@@ -556,7 +556,28 @@ async def change_passwd(data: UserPasswd, response: Response, auth: Optional[str
     session.commit()
   return {"result": data.passwd}
 
-@app.get("/api/user", tags=["User"])
+@app.get("/user/profile", tags=["User"])
+async def read_account(response: Response, auth: Optional[str] = Header(None)):
+  with SessionContext() as session:
+    res = session.query(dbUser).filter_by(uid = auth)
+  if not len(list(res)):
+    # response.status_code = 401
+    # return {"message": "사용자가 없습니다."}
+    user = {
+      "uid": res[0].uid,
+      "role": res[0].role,
+      "name": res[0].name,
+      "num": res[0].num,
+      "phone": res[0].phone
+    }
+    return {"result": user}
+  else:
+    response.status_code = 401
+    return {"message": "사용자가 없습니다."}
+
+
+
+@app.get("/api/users", tags=["User"])
 async def read_account(response: Response, auth: Optional[str] = Header(None)):
   admin = check_admin(auth)
   if not admin:
@@ -580,10 +601,19 @@ async def read_account(response: Response, auth: Optional[str] = Header(None)):
 @app.post("/api/user", tags=["User"])
 async def create_account(data: UserSignUp, response: Response, admin: Optional[str] = Header(None)):
   with SessionContext() as session:
-    res = session.query(dbUser).filter_by(uid = data.uid)
-  if len(list(res)):
-    response.status_code = 202
+    exitsUid = session.query(dbUser).filter_by(uid = data.uid)
+    exitsPhone = session.query(dbUser).filter_by(phone = data.phone)
+    exitsNum = session.query(dbUser).filter_by(num = data.num)
+    # error handling
+  if len(list(exitsUid)):
+    response.status_code = 400
     return {"message": "이미 있는 아이디입니다."}
+  if len(list(exitsPhone)):
+    response.status_code = 400
+    return {"message": "이미 있는 전화번호입니다."}
+  if len(list(exitsNum)):
+    response.status_code = 400
+    return {"message": "이미 있는 학번입니다."}
   if admin == ADMIN_KEY:
     user_role = "admin"
   else:
