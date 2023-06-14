@@ -558,24 +558,23 @@ async def change_passwd(data: UserPasswd, response: Response, auth: Optional[str
 
 @app.get("/user/profile", tags=["User"])
 async def read_account(response: Response, auth: Optional[str] = Header(None)):
-  with SessionContext() as session:
-    res = session.query(dbUser).filter_by(uid = auth)
-  if not len(list(res)):
-    # response.status_code = 401
-    # return {"message": "사용자가 없습니다."}
-    user = {
-      "uid": res[0].uid,
-      "role": res[0].role,
-      "name": res[0].name,
-      "num": res[0].num,
-      "phone": res[0].phone
-    }
-    return {"result": user}
-  else:
+  userId = check_auth(auth)
+  if not userId:
     response.status_code = 401
-    return {"message": "사용자가 없습니다."}
-
-
+    return {"message": "로그인이 필요합니다."}
+  with SessionContext() as session:
+    res = session.query(dbUser).filter_by(uid = userId)
+  if not len(list(res)):
+    response.status_code = 404
+    return {"message": "사용자를 찾을 수 없습니다."}
+  user = {
+    "uid": res[0].uid,
+    "role": res[0].role,
+    "name": res[0].name,
+    "num": res[0].num,
+    "phone": res[0].phone
+  }
+  return {"result": user}
 
 @app.get("/api/users", tags=["User"])
 async def read_account(response: Response, auth: Optional[str] = Header(None)):
