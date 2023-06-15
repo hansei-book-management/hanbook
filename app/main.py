@@ -39,6 +39,7 @@ tags_metadata = [
 app = FastAPI(openapi_tags=tags_metadata)
 
 origins = [
+    "http://127.0.0.1:4173",
     "http://127.0.0.1:5173",
 ]
 
@@ -259,15 +260,22 @@ async def create_club(data: CreateClub, response: Response, auth: str = Depends(
   if not uid:
     response.status_code = 401
     return {"message": "로그인이 필요합니다."}
-
+  
   with SessionContext() as session:
+    res = session.query(dbUser).filter_by(uid)
+    if len(list(session.query(dbClub).filter_by(name = data.name).all())):
+      response.status_code = 400
+      return {"message": "이미 존재하는 동아리 이름입니다."}
+    if len(list(session.query(dbClub).filter_by(director = uid).all())):
+      response.status_code = 400
+      return {"message": "이미 다른 동아리의 부장입니다."}
     Club = dbClub(name=data.name, director=uid)
     session.add(Club)
     session.commit()
 
   with SessionContext() as session:
     res = session.query(dbClub).filter_by(director = uid).all()
-    cid = res[-1].cid
+    cid = res[-1].cid 
 
   with SessionContext() as session:
     ClubList = dbList(uid=uid, cid=cid, name=data.name, freeze=0)
@@ -277,7 +285,7 @@ async def create_club(data: CreateClub, response: Response, auth: str = Depends(
   response.status_code = 201
   tmp = {
     "name": data.name,
-    "director": uid
+    "director": res[0].name
   }
   return {"result": tmp}
 
