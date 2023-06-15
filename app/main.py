@@ -262,13 +262,13 @@ async def create_club(data: CreateClub, response: Response, auth: str = Depends(
     return {"message": "로그인이 필요합니다."}
   
   with SessionContext() as session:
-    res = session.query(dbUser).filter_by(uid)
     if len(list(session.query(dbClub).filter_by(name = data.name).all())):
       response.status_code = 400
       return {"message": "이미 존재하는 동아리 이름입니다."}
     if len(list(session.query(dbClub).filter_by(director = uid).all())):
       response.status_code = 400
       return {"message": "이미 다른 동아리의 부장입니다."}
+    userName = session.query(dbUser).filter_by(uid=uid)
     Club = dbClub(name=data.name, director=uid)
     session.add(Club)
     session.commit()
@@ -285,7 +285,7 @@ async def create_club(data: CreateClub, response: Response, auth: str = Depends(
   response.status_code = 201
   tmp = {
     "name": data.name,
-    "director": res[0].name
+    "director": userName[0].name
   }
   return {"result": tmp}
 
@@ -609,7 +609,7 @@ async def read_account(response: Response, auth: str = Depends(oauth2_scheme)):
   return {"result": parse_obj_as(List[UserList], ret)}
 
 @app.post("/api/user", tags=["User"])
-async def create_account(data: UserSignUp, response: Response, admin: str = Depends(oauth2_scheme)):
+async def create_account(data: UserSignUp, response: Response, admin: Optional[str] = Header(None)):
   with SessionContext() as session:
     exitsUid = session.query(dbUser).filter_by(uid = data.uid)
     exitsPhone = session.query(dbUser).filter_by(phone = data.phone)
