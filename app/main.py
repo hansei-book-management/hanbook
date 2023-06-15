@@ -1,11 +1,12 @@
 from typing import List, Optional
 
-from fastapi import FastAPI, Response, Header, status
-from pydantic import BaseModel, parse_obj_as
+from fastapi import FastAPI, Depends, Response, Header
+from pydantic import  parse_obj_as
 import uvicorn
 
 from starlette.middleware.cors import CORSMiddleware
 
+from fastapi.security import OAuth2PasswordBearer
 from app.config import *
 from app.model import *
 from app.utils import *
@@ -14,6 +15,8 @@ from app.data import *
 from app.ext.naver_book_api import *
 
 Refresh_token = {} # TODO : redis
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 tags_metadata = [
     {
@@ -48,7 +51,7 @@ app.add_middleware(
 )
 
 @app.get("/api/book", tags=["Book"])
-async def query_book(query: str, response: Response, auth: Optional[str] = Header(None)):
+async def query_book(query: str, response: Response, auth: str = Depends(oauth2_scheme)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
@@ -64,7 +67,7 @@ async def query_book(query: str, response: Response, auth: Optional[str] = Heade
 
 
 @app.get("/api/club/{cid}/book", tags=["Book"])
-async def read_book(cid: int, response: Response, auth: Optional[str] = Header(None)):
+async def read_book(cid: int, response: Response, auth: str = Depends(oauth2_scheme)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
@@ -91,7 +94,7 @@ async def read_book(cid: int, response: Response, auth: Optional[str] = Header(N
   return {"result": parse_obj_as(List[BookList], ret)}
 
 @app.post("/api/club/{cid}/book", tags=["Book"])
-async def add_book(cid: int, data: AddBook, response: Response, auth: Optional[str] = Header(None)):
+async def add_book(cid: int, data: AddBook, response: Response, auth: str = Depends(oauth2_scheme)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
@@ -120,7 +123,7 @@ async def add_book(cid: int, data: AddBook, response: Response, auth: Optional[s
   return {"result": tmp}
 
 @app.post("/api/club/{cid}/book/{bid}", tags=["Book"])
-async def rent_book(cid: int, bid: int, response: Response, auth: Optional[str] = Header(None)):
+async def rent_book(cid: int, bid: int, response: Response, auth: str = Depends(oauth2_scheme)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
@@ -164,7 +167,7 @@ async def rent_book(cid: int, bid: int, response: Response, auth: Optional[str] 
   return {"result": end}
 
 @app.patch("/api/club/{cid}/book/{bid}", tags=["Book"])
-async def return_book(cid: int, bid: int, data: ReturnBook, response: Response, auth: Optional[str] = Header(None)):
+async def return_book(cid: int, bid: int, data: ReturnBook, response: Response, auth: str = Depends(oauth2_scheme)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
@@ -211,7 +214,7 @@ async def return_book(cid: int, bid: int, data: ReturnBook, response: Response, 
   return {}
 
 @app.delete("/api/club/{cid}/book/{bid}", tags=["Book"])
-async def delete_book(cid: int, bid: int, response: Response, auth: Optional[str] = Header(None)):
+async def delete_book(cid: int, bid: int, response: Response, auth: str = Depends(oauth2_scheme)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
@@ -232,7 +235,7 @@ async def delete_book(cid: int, bid: int, response: Response, auth: Optional[str
   return {}
 
 @app.get("/api/club", tags=["Club"])
-async def read_club(response: Response, auth: Optional[str] = Header(None)):
+async def read_club(response: Response, auth: str = Depends(oauth2_scheme)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
@@ -251,7 +254,7 @@ async def read_club(response: Response, auth: Optional[str] = Header(None)):
   return {"result": parse_obj_as(List[ClubList], ret)}
 
 @app.post("/api/club", tags=["Club"])
-async def create_club(data: CreateClub, response: Response, auth: Optional[str] = Header(None)):
+async def create_club(data: CreateClub, response: Response, auth: str = Depends(oauth2_scheme)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
@@ -279,7 +282,7 @@ async def create_club(data: CreateClub, response: Response, auth: Optional[str] 
   return {"result": tmp}
 
 @app.put("/api/club/{cid}", tags=["Club"])
-async def update_club(cid: int, data: UpdateClub, response: Response, auth: Optional[str] = Header(None)):
+async def update_club(cid: int, data: UpdateClub, response: Response, auth: str = Depends(oauth2_scheme)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
@@ -314,7 +317,7 @@ async def update_club(cid: int, data: UpdateClub, response: Response, auth: Opti
   return {"result": tmp}
 
 @app.delete("/api/club/{cid}", tags=["Club"])
-async def delete_club(cid: int, response: Response, auth: Optional[str] = Header(None)):
+async def delete_club(cid: int, response: Response, auth: str = Depends(oauth2_scheme)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
@@ -340,7 +343,7 @@ async def delete_club(cid: int, response: Response, auth: Optional[str] = Header
   return {}
 
 @app.post("/api/club/member", tags=["Member"])
-async def member(data: InviteToken, response: Response, auth: Optional[str] = Header(None)):
+async def member(data: InviteToken, response: Response, auth: str = Depends(oauth2_scheme)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
@@ -389,7 +392,7 @@ async def member(data: InviteToken, response: Response, auth: Optional[str] = He
   return {"result": tmp}
 
 @app.get("/api/club/{cid}/member", tags=["Member"])
-async def read_member(cid: int, response: Response, auth: Optional[str] = Header(None)):
+async def read_member(cid: int, response: Response, auth: str = Depends(oauth2_scheme)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
@@ -424,7 +427,7 @@ async def read_member(cid: int, response: Response, auth: Optional[str] = Header
   return {"result": parse_obj_as(List[ClubUserList], ret)}
 
 @app.post("/api/club/{cid}/member", tags=["Member"])
-async def invite_member(cid: int, data: InviteMember, response: Response, auth: Optional[str] = Header(None)):
+async def invite_member(cid: int, data: InviteMember, response: Response, auth: str = Depends(oauth2_scheme)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
@@ -455,7 +458,7 @@ async def invite_member(cid: int, data: InviteMember, response: Response, auth: 
 
 
 @app.patch("/api/club/{cid}/member/{user_id}", tags=["Member"])
-async def patch_member(cid: int, user_id: str, data: Freeze, response: Response, auth: Optional[str] = Header(None)):
+async def patch_member(cid: int, user_id: str, data: Freeze, response: Response, auth: str = Depends(oauth2_scheme)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
@@ -475,7 +478,7 @@ async def patch_member(cid: int, user_id: str, data: Freeze, response: Response,
   return {"result": data.freeze}
 
 @app.delete("/api/club/{cid}/member/{user_id}", tags=["Member"])
-async def delete_member(cid: int, user_id: str, response: Response, auth: Optional[str] = Header(None)):
+async def delete_member(cid: int, user_id: str, response: Response, auth: str = Depends(oauth2_scheme)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
@@ -498,8 +501,8 @@ async def delete_member(cid: int, user_id: str, response: Response, auth: Option
   response.status_code = 204
   return {}
 
-@app.get("/api/auth", tags=["Authentication"])
-async def read_club(response: Response, refresh: Optional[str] = Header(None)):
+@app.post("/auth/refresh", tags=["Authentication"])
+async def read_club(response: Response, refresh: str = Depends(oauth2_scheme) ):
   if refresh not in Refresh_token:
     response.status_code = 401
     return {"message": "로그인 만료"}
@@ -543,7 +546,7 @@ async def sign_in(data: UserData, response: Response):
     return {"message": "로그인 실패"}
 
 @app.patch("/api/auth", tags=["Authentication"])
-async def change_passwd(data: UserPasswd, response: Response, auth: Optional[str] = Header(None)):
+async def change_passwd(data: UserPasswd, response: Response, auth: str = Depends(oauth2_scheme)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
@@ -557,7 +560,7 @@ async def change_passwd(data: UserPasswd, response: Response, auth: Optional[str
   return {"result": data.passwd}
 
 @app.get("/user/profile", tags=["User"])
-async def read_account(response: Response, auth: Optional[str] = Header(None)):
+async def read_account(response: Response, auth: str = Depends(oauth2_scheme)):
   userId = check_auth(auth)
   if not userId:
     response.status_code = 401
@@ -577,7 +580,7 @@ async def read_account(response: Response, auth: Optional[str] = Header(None)):
   return {"result": user}
 
 @app.get("/api/users", tags=["User"])
-async def read_account(response: Response, auth: Optional[str] = Header(None)):
+async def read_account(response: Response, auth: str = Depends(oauth2_scheme)):
   admin = check_admin(auth)
   if not admin:
     response.status_code = 401
@@ -598,7 +601,7 @@ async def read_account(response: Response, auth: Optional[str] = Header(None)):
   return {"result": parse_obj_as(List[UserList], ret)}
 
 @app.post("/api/user", tags=["User"])
-async def create_account(data: UserSignUp, response: Response, admin: Optional[str] = Header(None)):
+async def create_account(data: UserSignUp, response: Response, admin: str = Depends(oauth2_scheme)):
   with SessionContext() as session:
     exitsUid = session.query(dbUser).filter_by(uid = data.uid)
     exitsPhone = session.query(dbUser).filter_by(phone = data.phone)
@@ -638,7 +641,7 @@ async def create_account(data: UserSignUp, response: Response, admin: Optional[s
   return {"result": {"auth": auth, "refresh": uuid}}
 
 @app.put("/api/user/{uid}", tags=["User"])
-async def update_account(uid: str, data: UserPasswd, response: Response, auth: Optional[str] = Header(None)):
+async def update_account(uid: str, data: UserPasswd, response: Response, auth: str = Depends(oauth2_scheme)):
   admin = check_admin(auth)
   if not admin:
     response.status_code = 401
@@ -657,7 +660,7 @@ async def update_account(uid: str, data: UserPasswd, response: Response, auth: O
   return {"result": data.passwd}
 
 @app.delete("/api/user/{uid}", tags=["User"])
-async def delete_account(uid: str, response: Response, auth: Optional[str] = Header(None)):
+async def delete_account(uid: str, response: Response, auth: str = Depends(oauth2_scheme)):
   admin = check_admin(auth)
   if not admin:
     response.status_code = 401
