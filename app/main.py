@@ -237,22 +237,26 @@ async def delete_book(cid: int, bid: int, response: Response, auth: str = Depend
 
 @app.get("/api/club", tags=["Club"])
 async def read_club(response: Response, auth: str = Depends(oauth2_scheme)):
-  uid = check_auth(auth)
-  if not uid:
-    response.status_code = 401
-    return {"message": "로그인이 필요합니다."}
+    uid = check_auth(auth)
+    if not uid:
+        response.status_code = 401
+        return {"message": "로그인이 필요합니다."}
 
-  with SessionContext() as session:
-    res = session.query(dbList).filter_by(uid = uid).all()
-  ret = []
-  for i in res:
-    tmp = {
-      "cid": i.cid,
-      "name": i.name,
-      "freeze": i.freeze
-    }
-    ret.append(tmp)
-  return {"result": parse_obj_as(List[ClubList], ret)}
+    with SessionContext() as session:
+        res = session.query(dbList).filter_by(uid=uid).all()
+        ret = []
+        for i in res:
+            # get club info
+            club = session.query(dbClub).filter_by(cid=i.cid).one_or_none() 
+            tmp = {
+                "cid": i.cid,
+                "name": i.name,
+                "freeze": i.freeze,
+                "director": club.director
+            }
+            ret.append(tmp)
+        return {"result": parse_obj_as(List[ClubList], ret)}
+
 
 @app.post("/api/club", tags=["Club"])
 async def create_club(data: CreateClub, response: Response, auth: str = Depends(oauth2_scheme)):
@@ -276,6 +280,12 @@ async def create_club(data: CreateClub, response: Response, auth: str = Depends(
   with SessionContext() as session:
     res = session.query(dbClub).filter_by(director = uid).all()
     cid = res[-1].cid 
+
+  with SessionContext() as session:
+    # change user role to director
+    User = session.query(dbUser).filter_by(uid=uid)
+    User.update({"role": "director"})
+    session.commit()
 
   with SessionContext() as session:
     ClubList = dbList(uid=uid, cid=cid, name=data.name, freeze=0)

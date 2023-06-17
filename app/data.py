@@ -25,6 +25,7 @@ class UpdateClub(BaseModel):
 class ClubList(BaseModel):
   cid: int
   name: str
+  director: str
 
 class ClubUserList(BaseModel):
   uid: str
