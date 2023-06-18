@@ -66,3 +66,7 @@ class UserList(BaseModel):
 
 class UserPasswd(BaseModel):
   passwd: str
+
+class BookInfo(BaseModel):
+  title: str
+  data: str

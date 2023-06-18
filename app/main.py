@@ -504,6 +504,45 @@ async def invite_member(cid: int, data: InviteMember, response: Response, auth: 
   }
   return {"result": tmp}
 
+@app.get("/api/club/{cid}/member/{user_id}", tags=["Member"])
+async def read_member_info(cid: int, user_id: str, response: Response, auth: str = Depends(oauth2_scheme)):
+  uid = check_auth(auth)
+  if not uid:
+    response.status_code = 401
+    return {"message":"로그인이 필요합니다."}
+
+  with SessionContext() as session:
+    res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
+  if not len(list(res)):
+    response.status_code = 400
+    return {"message":"자신이 부장인 동아리의 부원 정보만을 확인할 수 있습니다."}
+
+  with SessionContext() as session:
+    res = session.query(dbList).filter_by(uid = user_id).filter_by(cid = cid)
+  if not len(list(res)):
+    response.status_code = 404
+    return {"message":"해당 동아리에 가입된 부원이 아닙니다."}
+
+  with SessionContext() as session:
+    res = session.query(dbUser).filter_by(uid = user_id)
+
+
+  with SessionContext() as session:
+    books = session.query(dbBook).filter_by(cid = cid)
+    books_count = books.filter_by(uid = uid).count()
+    books_info = books.filter_by(uid = uid).all()
+
+  tmp = {
+    "uid": res[0].uid,
+    "role": res[0].role,
+    "name": res[0].name,
+    "num": res[0].num,
+    "phone": res[0].phone,
+    "borrowBook": books_count,
+    "books": parse_obj_as(List[BookInfo], books_info)
+  }
+  return {"result": tmp}
+
 
 @app.patch("/api/club/{cid}/member/{user_id}", tags=["Member"])
 async def patch_member(cid: int, user_id: str, data: Freeze, response: Response, auth: str = Depends(oauth2_scheme)):
