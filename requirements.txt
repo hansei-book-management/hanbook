@@ -5,3 +5,4 @@ sqlalchemy
 PyJWT
 gunicorn
 requests
+python-multipart

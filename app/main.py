@@ -1,6 +1,7 @@
 from typing import List, Optional
 
-from fastapi import FastAPI, Depends, Response, Header
+from fastapi import FastAPI, Depends, Response, Header, HTTPException
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import  parse_obj_as
 import uvicorn
 
@@ -578,7 +579,7 @@ async def change_passwd(data: UserPasswd, response: Response, auth: str = Depend
   return {"result": data.passwd}
 
 @app.get("/user/profile", tags=["User"])
-async def read_account(response: Response, auth: str = Depends(oauth2_scheme)):
+async def user_profile(response: Response, auth: str = Depends(oauth2_scheme)):
   userId = check_auth(auth)
   if not userId:
     response.status_code = 401
@@ -588,12 +589,21 @@ async def read_account(response: Response, auth: str = Depends(oauth2_scheme)):
   if not len(list(res)):
     response.status_code = 404
     return {"message": "사용자를 찾을 수 없습니다."}
+
+  with SessionContext() as session:
+    tmp = session.query(dbClub).filter_by(director = userId)
+
+  director = []
+  for i in tmp:
+    director.append(i.cid)
+
   user = {
     "uid": res[0].uid,
     "role": res[0].role,
     "name": res[0].name,
     "num": res[0].num,
-    "phone": res[0].phone
+    "phone": res[0].phone,
+    "director": director
   }
   return {"result": user}
 
@@ -690,6 +700,21 @@ async def delete_account(uid: str, response: Response, auth: str = Depends(oauth
     session.commit()
   response.status_code = 204
   return {}
+
+@app.post("/token")
+async def token(response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
+  with SessionContext() as session:
+    hash_passwd = hashgen(form_data.password)
+    res = session.query(dbUser).filter_by(uid = form_data.username, passwd = hash_passwd)
+  if len(list(res)):
+    if res[0].role == "admin":
+      auth = sign_admin(res[0].uid)
+    else:
+      auth = sign_auth(res[0].uid)
+    return {"access_token": auth, "token_type": "bearer"}
+
+  else:
+    return HTTPException(status_code=400, detail="Incorrect username or password")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0")
