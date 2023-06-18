@@ -319,6 +319,24 @@ async def update_club(cid: int, data: UpdateClub, response: Response, auth: str 
     return {"message": "부장으로 임명할 사용자를 부원 중에서 찾을 수 없습니다."}
 
   with SessionContext() as session:
+    res = session.query(dbClub).filter_by(director = data.director)
+  if len(list(res)):
+    response.status_code = 400
+    return {"message": "그 사용자는 이미 다른 동아리의 부장입니다."}
+
+  with SessionContext() as session:
+    # change user role to director
+    User = session.query(dbUser).filter_by(uid=data.director)
+    User.update({"role": "director"})
+    session.commit()
+
+  with SessionContext() as session:
+    # change user role to director
+    User = session.query(dbUser).filter_by(uid=uid)
+    User.update({"role": "user"})
+    session.commit()
+
+  with SessionContext() as session:
     Club = session.query(dbClub).filter_by(cid = cid)
     Club.update({"name": data.name, "director": data.director})
     session.commit()
@@ -351,6 +369,13 @@ async def delete_club(cid: int, response: Response, auth: str = Depends(oauth2_s
     ClubList = session.query(dbList).filter_by(cid = cid)
     ClubList.delete()
     session.commit()
+
+  with SessionContext() as session:
+    # change user role to director
+    User = session.query(dbUser).filter_by(uid=uid)
+    User.update({"role": "user"})
+    session.commit()
+
 
   with SessionContext() as session:
     Club = session.query(dbClub).filter_by(cid = cid)
@@ -470,7 +495,7 @@ async def invite_member(cid: int, data: InviteMember, response: Response, auth: 
       break
 
   with SessionContext() as session:
-    Invite = dbInvite(uuid=uuid, cid=cid, end=data.end + get_time(), use=data.use)
+    Invite = dbInvite(uuid=uuid, cid=cid, end=data.end * DAY + get_time(), use=data.use)
     session.add(Invite)
     session.commit()
 
