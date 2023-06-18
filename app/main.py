@@ -562,7 +562,7 @@ async def patch_member(cid: int, user_id: str, data: Freeze, response: Response,
     ClubList.update({"freeze": data.freeze})
     session.commit()
   response.status_code = 204
-  return {"result": data.freeze}
+  return {"result": {'freeze': data.freeze}}
 
 @app.delete("/api/club/{cid}/member/{user_id}", tags=["Member"])
 async def delete_member(cid: int, user_id: str, response: Response, auth: str = Depends(oauth2_scheme)):
