@@ -247,7 +247,6 @@ async def read_club(response: Response, auth: str = Depends(oauth2_scheme)):
         res = session.query(dbList).filter_by(uid=uid).all()
         ret = []
         for i in res:
-            # get club info
             club = session.query(dbClub).filter_by(cid=i.cid).one_or_none() 
             tmp = {
                 "cid": i.cid,
@@ -426,6 +425,10 @@ async def read_member(cid: int, response: Response, auth: str = Depends(oauth2_s
   with SessionContext() as session:
     res = session.query(dbList).filter_by(cid = cid)
 
+  with SessionContext() as session:
+    books = session.query(dbBook).filter_by(cid = cid)
+    user_books_count = books.filter_by(uid = uid).count()
+
   user_list = []
   for i in res:
     user_list.append([i.uid, i.freeze])
@@ -440,6 +443,7 @@ async def read_member(cid: int, response: Response, auth: str = Depends(oauth2_s
       "name": res[0].name,
       "num": res[0].num,
       "phone": res[0].phone,
+      "borrowBook": user_books_count,
       "freeze": i[1]
     }
     ret.append(tmp)

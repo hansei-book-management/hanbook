@@ -33,6 +33,7 @@ class ClubUserList(BaseModel):
   name: str
   num: str
   phone: str
+  borrowBook: int
   freeze: int
 
 class InviteToken(BaseModel):
