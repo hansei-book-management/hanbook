@@ -622,7 +622,10 @@ async def user_profile(response: Response, auth: str = Depends(oauth2_scheme)):
   with SessionContext() as session:
     tmp = session.query(dbClub).filter_by(director = userId)
 
-  director = tmp[0]
+  if len(list(tmp)):
+    director = tmp[0]
+  else:
+    director = None
 
   user = {
     "uid": res[0].uid,
