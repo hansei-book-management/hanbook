@@ -23,7 +23,7 @@ def get_time():
   return int(time())
 
 def sign_auth(user_id):
-  end = int(time()) + DAY
+  end = int(time()) + 60# DAY
   tmp = {
     "id": user_id,
     "type": "auth",
