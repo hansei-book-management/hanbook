@@ -409,7 +409,7 @@ async def member(data: InviteToken, response: Response, auth: str = Depends(oaut
   with SessionContext() as session:
     res = session.query(dbList).filter_by(uid = uid).filter_by(cid = cid)
   if len(list(res)):
-    response.status_code = 202
+    response.status_code = 400
     return {"message": "이미 가입한 동아리입니다."}
 
   with SessionContext() as session:
@@ -639,7 +639,7 @@ async def sign_in(data: UserData, response: Response):
     return {"result": {"auth": auth, "refresh": uuid}}
   else:
     response.status_code = 401
-    return {"message": "로그인 실패"}
+    return {"message": "로그인 실패하였습니다."}
 
 @app.patch("/api/auth", tags=["Authentication"])
 async def change_passwd(data: UserPasswd, response: Response, auth: str = Depends(oauth2_scheme)):
