@@ -604,7 +604,7 @@ async def read_club(response: Response, refresh: str = Depends(oauth2_scheme)):
     else:
       auth = sign_auth(res[0].uid)
     response.status_code = 201
-    return {"result": auth}
+    return {"result": {"auth": auth}}
   else:
     response.status_code = 401
     return {"message": "사용자가 삭제되었습니다."}
