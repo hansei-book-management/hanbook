@@ -739,10 +739,10 @@ async def create_account(data: UserSignUp, response: Response, admin: Optional[s
     auth = sign_auth(data.uid)
 
   while True:
-    uuid = uuid_gen()
-    if uuid not in Refresh_token:
-      break
-  Refresh_token[uuid] = data.uid
+      uuid = uuid_gen()
+      if not rd.get(uuid):
+        break
+  rd.set(uuid, str(data.uid))
 
   return {"result": {"auth": auth, "refresh": uuid}}
 
