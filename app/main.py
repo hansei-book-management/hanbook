@@ -434,8 +434,8 @@ async def member(data: InviteToken, response: Response, auth: str = Depends(oaut
   }
   return {"result": tmp}
 
-@app.get("/api/club/{cid}/member", tags=["Member"])
-async def read_member(cid: int, response: Response, auth: str = Depends(oauth2_scheme)):
+@app.get("/api/club/{cid}", tags=["Member"])
+async def club_info(cid: int, response: Response, auth: str = Depends(oauth2_scheme)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
@@ -445,17 +445,17 @@ async def read_member(cid: int, response: Response, auth: str = Depends(oauth2_s
     res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 400
-    return {"message": "자신이 부장인 동아리의 부원 명단만을 확인할 수 있습니다."}
+    return {"message": "자신이 부장인 동아리의 정보만 확인할 수 있습니다."}
 
   with SessionContext() as session:
-    res = session.query(dbList).filter_by(cid = cid)
+    club = session.query(dbList).filter_by(cid = cid)
 
   with SessionContext() as session:
     books = session.query(dbBook).filter_by(cid = cid)
     user_books_count = books.filter_by(uid = uid).count()
 
   user_list = []
-  for i in res:
+  for i in club:
     user_list.append([i.uid, i.freeze])
 
   ret = []
@@ -472,7 +472,13 @@ async def read_member(cid: int, response: Response, auth: str = Depends(oauth2_s
       "freeze": i[1]
     }
     ret.append(tmp)
-  return {"result": parse_obj_as(List[ClubUserList], ret)}
+    result = {
+      'name': club[0].name,
+      'director': uid,
+      'cid': cid,
+      'members': parse_obj_as(List[ClubUserList], ret)
+    }
+  return {"result": result}
 
 @app.post("/api/club/{cid}/member", tags=["Member"])
 async def invite_member(cid: int, data: InviteMember, response: Response, auth: str = Depends(oauth2_scheme)):
