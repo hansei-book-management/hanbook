@@ -518,8 +518,8 @@ async def read_member_info(cid: int, user_id: str, response: Response, auth: str
     return {"message":"자신이 부장인 동아리의 부원 정보만을 확인할 수 있습니다."}
 
   with SessionContext() as session:
-    res = session.query(dbList).filter_by(uid = user_id).filter_by(cid = cid)
-  if not len(list(res)):
+    club = session.query(dbList).filter_by(uid = user_id).filter_by(cid = cid)
+  if not len(list(club)):
     response.status_code = 404
     return {"message":"해당 동아리에 가입된 부원이 아닙니다."}
 
@@ -538,6 +538,7 @@ async def read_member_info(cid: int, user_id: str, response: Response, auth: str
     "name": res[0].name,
     "num": res[0].num,
     "phone": res[0].phone,
+    "freeze": club[0].freeze,
     "borrowBook": books_count,
     "books": parse_obj_as(List[BookInfo], books_info)
   }
@@ -561,7 +562,7 @@ async def patch_member(cid: int, user_id: str, data: Freeze, response: Response,
     ClubList = session.query(dbList).filter_by(uid = user_id).filter_by(cid = cid)
     ClubList.update({"freeze": data.freeze})
     session.commit()
-  response.status_code = 204
+  response.status_code = 200
   return {"result": {'freeze': data.freeze}}
 
 @app.delete("/api/club/{cid}/member/{user_id}", tags=["Member"])
