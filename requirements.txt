@@ -6,3 +6,4 @@ PyJWT
 gunicorn
 requests
 python-multipart
+redis

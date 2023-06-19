@@ -13,9 +13,9 @@ from app.model import *
 from app.utils import *
 from app.data import *
 
-from app.ext.naver_book_api import *
+from app.session import rd
 
-Refresh_token = {} # TODO : redis
+from app.ext.naver_book_api import *
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -591,11 +591,13 @@ async def delete_member(cid: int, user_id: str, response: Response, auth: str = 
 
 @app.post("/auth/refresh", tags=["Authentication"])
 async def read_club(response: Response, refresh: str = Depends(oauth2_scheme)):
-  if refresh not in Refresh_token:
+  uid = rd.get(refresh)
+
+  if not uid:
     response.status_code = 401
     return {"message": "로그인 만료"}
-  
-  uid = Refresh_token[refresh]
+
+  uid = uid.decode()
 
   with SessionContext() as session:
     res = session.query(dbUser).filter_by(uid = uid)
@@ -624,9 +626,9 @@ async def sign_in(data: UserData, response: Response):
     
     while True:
       uuid = uuid_gen()
-      if uuid not in Refresh_token:
+      if not rd.get(uuid):
         break
-    Refresh_token[uuid] = data.uid
+    rd.set(uuid, str(data.uid))
     
     return {"result": {"auth": auth, "refresh": uuid}}
   else:
