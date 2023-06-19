@@ -371,6 +371,11 @@ async def delete_club(cid: int, response: Response, auth: str = Depends(oauth2_s
     session.commit()
 
   with SessionContext() as session:
+    Invite = session.query(dbInvite).filter_by(cid = cid)
+    Invite.delete()
+    session.commit()
+
+  with SessionContext() as session:
     # change user role to director
     User = session.query(dbUser).filter_by(uid=uid)
     User.update({"role": "user"})
