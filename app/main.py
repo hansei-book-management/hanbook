@@ -13,9 +13,9 @@ from app.model import *
 from app.utils import *
 from app.data import *
 
-from app.ext.naver_book_api import *
+from app.session import rd
 
-Refresh_token = {} # TODO : redis
+from app.ext.naver_book_api import *
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -414,7 +414,7 @@ async def member(data: InviteToken, response: Response, auth: str = Depends(oaut
   with SessionContext() as session:
     res = session.query(dbList).filter_by(uid = uid).filter_by(cid = cid)
   if len(list(res)):
-    response.status_code = 202
+    response.status_code = 400
     return {"message": "이미 가입한 동아리입니다."}
 
   with SessionContext() as session:
@@ -439,8 +439,8 @@ async def member(data: InviteToken, response: Response, auth: str = Depends(oaut
   }
   return {"result": tmp}
 
-@app.get("/api/club/{cid}/member", tags=["Member"])
-async def read_member(cid: int, response: Response, auth: str = Depends(oauth2_scheme)):
+@app.get("/api/club/{cid}", tags=["Member"])
+async def club_info(cid: int, response: Response, auth: str = Depends(oauth2_scheme)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
@@ -450,17 +450,17 @@ async def read_member(cid: int, response: Response, auth: str = Depends(oauth2_s
     res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 400
-    return {"message": "자신이 부장인 동아리의 부원 명단만을 확인할 수 있습니다."}
+    return {"message": "자신이 부장인 동아리의 정보만 확인할 수 있습니다."}
 
   with SessionContext() as session:
-    res = session.query(dbList).filter_by(cid = cid)
+    club = session.query(dbList).filter_by(cid = cid)
 
   with SessionContext() as session:
     books = session.query(dbBook).filter_by(cid = cid)
     user_books_count = books.filter_by(uid = uid).count()
 
   user_list = []
-  for i in res:
+  for i in club:
     user_list.append([i.uid, i.freeze])
 
   ret = []
@@ -477,7 +477,13 @@ async def read_member(cid: int, response: Response, auth: str = Depends(oauth2_s
       "freeze": i[1]
     }
     ret.append(tmp)
-  return {"result": parse_obj_as(List[ClubUserList], ret)}
+    result = {
+      'name': club[0].name,
+      'director': uid,
+      'cid': cid,
+      'members': parse_obj_as(List[ClubUserList], ret)
+    }
+  return {"result": result}
 
 @app.post("/api/club/{cid}/member", tags=["Member"])
 async def invite_member(cid: int, data: InviteMember, response: Response, auth: str = Depends(oauth2_scheme)):
@@ -523,8 +529,8 @@ async def read_member_info(cid: int, user_id: str, response: Response, auth: str
     return {"message":"자신이 부장인 동아리의 부원 정보만을 확인할 수 있습니다."}
 
   with SessionContext() as session:
-    res = session.query(dbList).filter_by(uid = user_id).filter_by(cid = cid)
-  if not len(list(res)):
+    club = session.query(dbList).filter_by(uid = user_id).filter_by(cid = cid)
+  if not len(list(club)):
     response.status_code = 404
     return {"message":"해당 동아리에 가입된 부원이 아닙니다."}
 
@@ -543,6 +549,7 @@ async def read_member_info(cid: int, user_id: str, response: Response, auth: str
     "name": res[0].name,
     "num": res[0].num,
     "phone": res[0].phone,
+    "freeze": club[0].freeze,
     "borrowBook": books_count,
     "books": parse_obj_as(List[BookInfo], books_info)
   }
@@ -566,7 +573,7 @@ async def patch_member(cid: int, user_id: str, data: Freeze, response: Response,
     ClubList = session.query(dbList).filter_by(uid = user_id).filter_by(cid = cid)
     ClubList.update({"freeze": data.freeze})
     session.commit()
-  response.status_code = 204
+  response.status_code = 200
   return {"result": {'freeze': data.freeze}}
 
 @app.delete("/api/club/{cid}/member/{user_id}", tags=["Member"])
@@ -595,11 +602,13 @@ async def delete_member(cid: int, user_id: str, response: Response, auth: str = 
 
 @app.post("/auth/refresh", tags=["Authentication"])
 async def read_club(response: Response, refresh: str = Depends(oauth2_scheme)):
-  if refresh not in Refresh_token:
+  uid = rd.get(refresh)
+
+  if not uid:
     response.status_code = 401
     return {"message": "로그인 만료"}
-  
-  uid = Refresh_token[refresh]
+
+  uid = uid.decode()
 
   with SessionContext() as session:
     res = session.query(dbUser).filter_by(uid = uid)
@@ -628,14 +637,14 @@ async def sign_in(data: UserData, response: Response):
     
     while True:
       uuid = uuid_gen()
-      if uuid not in Refresh_token:
+      if not rd.get(uuid):
         break
-    Refresh_token[uuid] = data.uid
+    rd.set(uuid, str(data.uid))
     
     return {"result": {"auth": auth, "refresh": uuid}}
   else:
     response.status_code = 401
-    return {"message": "로그인 실패"}
+    return {"message": "로그인 실패하였습니다."}
 
 @app.patch("/api/auth", tags=["Authentication"])
 async def change_passwd(data: UserPasswd, response: Response, auth: str = Depends(oauth2_scheme)):
@@ -735,10 +744,10 @@ async def create_account(data: UserSignUp, response: Response, admin: Optional[s
     auth = sign_auth(data.uid)
 
   while True:
-    uuid = uuid_gen()
-    if uuid not in Refresh_token:
-      break
-  Refresh_token[uuid] = data.uid
+      uuid = uuid_gen()
+      if not rd.get(uuid):
+        break
+  rd.set(uuid, str(data.uid))
 
   return {"result": {"auth": auth, "refresh": uuid}}
 

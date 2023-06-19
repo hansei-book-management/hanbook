@@ -3,7 +3,7 @@ version: '3.7'
 services:
   web:
     build: .
-    command: bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; gunicorn --capture-output --log-level debug -k uvicorn.workers.UvicornWorker --access-logfile ./gunicorn-access.log app.main:app --bind 0.0.0.0:8000 --workers 1'
+    command: bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; gunicorn --capture-output --log-level debug -k uvicorn.workers.UvicornWorker --access-logfile ./gunicorn-access.log app.main:app --bind 0.0.0.0:8000 --workers 8'
     volumes:
       - ./app:/code/app
       - ./uploads:/code/uploads
@@ -16,8 +16,16 @@ services:
       - NAVER_CLIENT_ID=${NAVER_CLIENT_ID}
       - NAVER_CLIENT_SECRET=${NAVER_CLIENT_SECRET}
     depends_on:
+      - redis
       - db
     restart: on-failure
+  redis:
+    image: redis:alpine
+    container_name: main_redis
+    command: redis-server --port 6379
+    hostname: redis
+    ports:
+      - 6379:6379
   db:
     image: postgres:15-alpine
     volumes:
