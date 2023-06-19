@@ -589,7 +589,7 @@ async def delete_member(cid: int, user_id: str, response: Response, auth: str = 
   return {}
 
 @app.post("/auth/refresh", tags=["Authentication"])
-async def read_club(response: Response, refresh: str = Depends(oauth2_scheme) ):
+async def read_club(response: Response, refresh: str):
   if refresh not in Refresh_token:
     response.status_code = 401
     return {"message": "로그인 만료"}
