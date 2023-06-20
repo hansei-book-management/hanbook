@@ -18,7 +18,7 @@ def query_book(q):
 
 def query_book_list():
   params = {
-    'query': '',
+    'query': '프로그래밍',
     'display': '30',
     'start': '1',
   }
