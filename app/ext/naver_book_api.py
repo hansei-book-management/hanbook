@@ -9,7 +9,17 @@ headers = {
 def query_book(q):
   params = {
     'query': q,
-    'display': '10',
+    'display': '30',
+    'start': '1',
+  }
+
+  res = requests.get('https://openapi.naver.com/v1/search/book.json', params=params, headers=headers)
+  return res.text
+
+def query_book_list():
+  params = {
+    'query': '',
+    'display': '30',
     'start': '1',
   }
 

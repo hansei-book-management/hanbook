@@ -71,29 +71,14 @@ async def search_books(query: str, response: Response, auth: str = Depends(oauth
 
 
 @app.get("/api/club/book", tags=["Book"])
-async def read_book(count: int, response: Response, auth: str = Depends(oauth2_scheme)):
+async def read_book(response: Response, auth: str = Depends(oauth2_scheme)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
     return {"message": "로그인이 필요합니다."}
 
-  with SessionContext() as session:
-    res = session.query(dbBook).all()
-  ret = []
-  c = 0
-  for i in res:
-    tmp = {
-      "bid": i.bid,
-      "cid": i.cid,
-      "uid": i.uid,
-      "end": i.end,
-      "data": i.data
-    }
-    ret.append(tmp)
-    c += 1
-    if c > count:
-      break
-  return {"result": parse_obj_as(List[BookList], ret)}
+  res = query_book_list()
+  return {"result": res}
 
 @app.get("/api/club/{cid}/book", tags=["Book"])
 async def read_book(cid: int, response: Response, auth: str = Depends(oauth2_scheme)):
