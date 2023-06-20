@@ -52,7 +52,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/api/book", tags=["Book"])
+@app.get("/search/book", tags=["Book"])
 async def search_books(query: str, response: Response, auth: str = Depends(oauth2_scheme)):
   uid = check_auth(auth)
   if not uid:
@@ -70,7 +70,7 @@ async def search_books(query: str, response: Response, auth: str = Depends(oauth
   return {"result": res}
 
 
-@app.get("/api/club/book", tags=["Book"])
+@app.get("/api/books", tags=["Book"])
 async def read_book(response: Response, auth: str = Depends(oauth2_scheme)):
   uid = check_auth(auth)
   if not uid:

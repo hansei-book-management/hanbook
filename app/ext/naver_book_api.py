@@ -24,7 +24,7 @@ def query_book_list():
   }
 
   res = requests.get('https://openapi.naver.com/v1/search/book.json', params=params, headers=headers)
-  return res.text
+  return res.json()
 
 def query_book_isbn(q):
   params = {
