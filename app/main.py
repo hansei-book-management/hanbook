@@ -53,7 +53,7 @@ app.add_middleware(
 )
 
 @app.get("/api/book", tags=["Book"])
-async def query_book(query: str, response: Response, auth: str = Depends(oauth2_scheme)):
+async def search_books(query: str, response: Response, auth: str = Depends(oauth2_scheme)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
@@ -65,8 +65,35 @@ async def query_book(query: str, response: Response, auth: str = Depends(oauth2_
     response.status_code = 400
     return {"동아리 부장만 사용할 수 있습니다."}
 
-  return {"result": query_book(query)}
+  response.status_code = 200
+  res = query_book(query)
+  return {"result": res}
 
+
+@app.get("/api/club/book", tags=["Book"])
+async def read_book(count: int, response: Response, auth: str = Depends(oauth2_scheme)):
+  uid = check_auth(auth)
+  if not uid:
+    response.status_code = 401
+    return {"message": "로그인이 필요합니다."}
+
+  with SessionContext() as session:
+    res = session.query(dbBook).all()
+  ret = []
+  c = 0
+  for i in res:
+    tmp = {
+      "bid": i.bid,
+      "cid": i.cid,
+      "uid": i.uid,
+      "end": i.end,
+      "data": i.data
+    }
+    ret.append(tmp)
+    c += 1
+    if c > count:
+      break
+  return {"result": parse_obj_as(List[BookList], ret)}
 
 @app.get("/api/club/{cid}/book", tags=["Book"])
 async def read_book(cid: int, response: Response, auth: str = Depends(oauth2_scheme)):
