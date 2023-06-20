@@ -76,12 +76,6 @@ async def read_book(cid: int, response: Response, auth: str = Depends(oauth2_sch
     return {"message": "로그인이 필요합니다."}
 
   with SessionContext() as session:
-    res = session.query(dbList).filter_by(uid = uid).filter_by(cid = cid)
-  if not len(list(res)):
-    response.status_code = 202
-    return {"message": "자신이 속한 동아리에만 접근할 수 있습니다."}
-
-  with SessionContext() as session:
     res = session.query(dbBook).filter_by(cid = cid)
   ret = []
   for i in res:
