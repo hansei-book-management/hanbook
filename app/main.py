@@ -554,6 +554,9 @@ async def read_member_info(cid: int, user_id: str, response: Response, auth: str
     books_count = books.filter_by(uid = uid).count()
     books_info = books.filter_by(uid = uid).all()
 
+  books_list = []
+  for i in books_info:
+    books_list.append(i)
   tmp = {
     "uid": res[0].uid,
     "role": res[0].role,
@@ -562,7 +565,7 @@ async def read_member_info(cid: int, user_id: str, response: Response, auth: str
     "phone": res[0].phone,
     "freeze": club[0].freeze,
     "borrowBook": books_count,
-    "books": parse_obj_as(List[BookInfo], books_info)
+    "books": books_list
   }
   return {"result": tmp}
 
