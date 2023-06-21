@@ -228,28 +228,7 @@ async def return_book(cid: int, bid: int, data: ReturnBook, response: Response, 
   response.status_code = 204
   return {}
 
-@app.delete("/api/club/{cid}/book/{bid}", tags=["Book"])
-async def delete_book(cid: int, bid: int, response: Response, auth: str = Depends(oauth2_scheme)):
-  uid = check_auth(auth)
-  if not uid:
-    response.status_code = 401
-    return {"message": "로그인이 필요합니다."}
-
-  with SessionContext() as session:
-    res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
-  if not len(list(res)):
-    response.status_code = 400
-    return {"message": "자신이 부장인 동아리의 도서만 삭제할 수 있습니다."}
-
-  with SessionContext() as session:
-    Book = session.query(dbBook).filter_by(cid = cid).filter_by(bid = bid)
-    Book.delete()
-    session.commit()
-
-  response.status_code = 204
-  return {}
-
-@app.get("/api/club", tags=["Club"])
+@app.delete("/api//club", tags=["Club"])
 async def read_club(response: Response, auth: str = Depends(oauth2_scheme)):
     uid = check_auth(auth)
     if not uid:
@@ -257,7 +236,7 @@ async def read_club(response: Response, auth: str = Depends(oauth2_scheme)):
         return {"message": "로그인이 필요합니다."}
 
     with SessionContext() as session:
-        res = session.query(dbList).filter_by(uid=uid).all()
+        res = session.query(dbList).all()
         ret = []
         for i in res:
             club = session.query(dbClub).filter_by(cid=i.cid).one_or_none() 
