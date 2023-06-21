@@ -82,15 +82,16 @@ async def read_book(response: Response, auth: str = Depends(oauth2_scheme)):
   res = query_book_list()
   return {"result": res}
 
-@app.get("/api/club/{cid}/book", tags=["Book"])
-async def read_book(cid: int, response: Response, auth: str = Depends(oauth2_scheme)):
+@app.get("/api/club/{uid}/book", tags=["Book"])
+async def read_book(uid: str, response: Response, auth: str = Depends(oauth2_scheme)):
   uid = check_auth(auth)
   if not uid:
     response.status_code = 401
     return {"message": "로그인이 필요합니다."}
 
   with SessionContext() as session:
-    res = session.query(dbBook).filter_by(cid = cid)
+    res = session.query(dbBook).filter_by(uid = uid)
+    user_books_count = res.filter_by(end = 14).count()
   ret = []
   for i in res:
     tmp = {
@@ -98,6 +99,7 @@ async def read_book(cid: int, response: Response, auth: str = Depends(oauth2_sch
       "cid": i.cid,
       "uid": i.uid,
       "end": i.end,
+      'borrowBook': user_books_count,
       "data": json.loads(i.data)
     }
     ret.append(tmp)
@@ -228,6 +230,29 @@ async def return_book(cid: int, bid: int, data: ReturnBook, response: Response, 
   response.status_code = 204
   return {}
 
+@app.get('/api/clubs', tags=["Club"])
+async def read_clubs(response: Response,):
+  
+  with SessionContext() as session:
+    res = session.query(dbClub).all()
+    for i in res:
+      with SessionContext() as session:
+        book = session.query(dbBook).filter_by(cid = i.cid)
+        book_list = []
+        for j in book:
+          tmp = {
+            "bid": j.bid,
+            "cid": j.cid,
+            "uid": j.uid,
+            "end": j.end,
+            "data": json.loads(j.data)
+          }
+          book_list.append(tmp)
+        i.book = book_list
+    response.status_code = 200
+    return {"result": res}
+
+
 @app.get("/api/club", tags=["Club"])
 async def read_club(response: Response, auth: str = Depends(oauth2_scheme)):
     uid = check_auth(auth)
@@ -237,7 +262,7 @@ async def read_club(response: Response, auth: str = Depends(oauth2_scheme)):
 
     ret = []
     with SessionContext() as session:
-      club = session.query(dbClub).all()
+      club = session.query(dbList).filter_by(uid = uid)
     for i in club:
       with SessionContext() as session:
         res = session.query(dbBook).filter_by(cid = i.cid)
@@ -256,7 +281,6 @@ async def read_club(response: Response, auth: str = Depends(oauth2_scheme)):
           "cid": i.cid,
           "name": i.name,
           "book": book_list,
-          "director": i.director
         }
       ret.append(tmp)
     return {"result": ret}
@@ -461,7 +485,7 @@ async def club_info(cid: int, response: Response, auth: str = Depends(oauth2_sch
 
   with SessionContext() as session:
     books = session.query(dbBook).filter_by(cid = cid)
-    user_books_count = books.filter_by(uid = uid).count()
+    user_books_count = books.filter_by(uid = uid).filter_by(end=14).count()
 
   user_list = []
   for i in club:
@@ -544,8 +568,8 @@ async def read_member_info(cid: int, user_id: str, response: Response, auth: str
 
   with SessionContext() as session:
     books = session.query(dbBook).filter_by(cid = cid)
-    books_count = books.filter_by(uid = user_id).count()
-    books_info = books.filter_by(uid = user_id).all()
+    books_info = books.filter_by(uid = user_id).filter_by(end=14).all()
+    borrow_count = books.filter_by(uid = user_id).filter_by(end=14).count()
 
   books_list = []
   for i in books_info:
@@ -559,7 +583,7 @@ async def read_member_info(cid: int, user_id: str, response: Response, auth: str
     "num": res[0].num,
     "phone": res[0].phone,
     "freeze": club[0].freeze,
-    "borrowBook": books_count,
+    "borrowBook": borrow_count,
     "books": books_list
   }
   return {"result": tmp}
@@ -695,7 +719,7 @@ async def user_profile(response: Response, auth: str = Depends(oauth2_scheme)):
     "name": res[0].name,
     "num": res[0].num,
     "phone": res[0].phone,
-    "director": director
+    "director": director,
   }
   return {"result": user}
 
