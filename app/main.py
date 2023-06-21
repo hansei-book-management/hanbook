@@ -544,8 +544,8 @@ async def read_member_info(cid: int, user_id: str, response: Response, auth: str
 
   with SessionContext() as session:
     books = session.query(dbBook).filter_by(cid = cid)
-    books_count = books.filter_by(uid = uid).count()
-    books_info = books.filter_by(uid = uid).all()
+    books_count = books.filter_by(uid = user_id).count()
+    books_info = books.filter_by(uid = user_id).all()
 
   books_list = []
   for i in books_info:
