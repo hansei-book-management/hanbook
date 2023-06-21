@@ -114,20 +114,25 @@ async def add_book(cid: int, data: AddBook, response: Response, auth: str = Depe
     response.status_code = 400
     return {"message": "자신이 부장인 동아리에만 도서를 추가할 수 있습니다."}
 
-  book_data = query_book_isbn(data.isbn)
-  if not book_data:
-    response.status_code = 404
-    return {"message": "해당하는 도서를 찾을 수 없습니다."}
+  ISBN = data.isbn.split(",")
 
-  with SessionContext() as session:
-    Book = dbBook(cid=cid, data=book_data, uid=uid, end=0)
-    session.add(Book)
-    session.commit()
+  for isbn in ISBN:
+    book_data = query_book_isbn(isbn)
+    if not book_data:
+      response.status_code = 404
+      return {"message": "해당하는 도서를 찾을 수 없습니다."}
+
+    with SessionContext() as session:
+      Book = dbBook(cid=cid, data=book_data, uid=uid, end=0)
+      session.add(Book)
+      session.commit()
 
   tmp = {
     "isbn": data.isbn,
     "cid": cid
   }
+
+  response.status_code = 201
   return {"result": tmp}
 
 @app.post("/api/club/{cid}/book/{bid}", tags=["Book"])
