@@ -589,7 +589,7 @@ async def patch_member(cid: int, user_id: str, data: Freeze, response: Response,
 
   with SessionContext() as session:
     ClubList = session.query(dbList).filter_by(uid = user_id).filter_by(cid = cid)
-    ClubList.update({"freeze": data.freeze})
+    ClubList.update({"freeze": data.freeze * DAY})
     session.commit()
   response.status_code = 200
   return {"result": {'freeze': data.freeze}}
