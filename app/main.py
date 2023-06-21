@@ -228,7 +228,7 @@ async def return_book(cid: int, bid: int, data: ReturnBook, response: Response, 
   response.status_code = 204
   return {}
 
-@app.delete("/api//club", tags=["Club"])
+@app.get("/api/club", tags=["Club"])
 async def read_club(response: Response, auth: str = Depends(oauth2_scheme)):
     uid = check_auth(auth)
     if not uid:
