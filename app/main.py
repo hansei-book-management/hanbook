@@ -98,10 +98,10 @@ async def read_book(cid: int, response: Response, auth: str = Depends(oauth2_sch
       "cid": i.cid,
       "uid": i.uid,
       "end": i.end,
-      "data": i.data
+      "data": json.loads(i.data)
     }
     ret.append(tmp)
-  return {"result": parse_obj_as(List[BookList], ret)}
+  return {"result": ret}
 
 @app.post("/api/club/{cid}/book", tags=["Book"])
 async def add_book(cid: int, data: AddBook, response: Response, auth: str = Depends(oauth2_scheme)):
@@ -125,7 +125,7 @@ async def add_book(cid: int, data: AddBook, response: Response, auth: str = Depe
       return {"message": "해당하는 도서를 찾을 수 없습니다."}
 
     with SessionContext() as session:
-      Book = dbBook(cid=cid, data=book_data, uid=uid, end=0)
+      Book = dbBook(cid=cid, data=json.dumps(book_data), uid=uid, end=0)
       session.add(Book)
       session.commit()
 
@@ -235,19 +235,31 @@ async def read_club(response: Response, auth: str = Depends(oauth2_scheme)):
         response.status_code = 401
         return {"message": "로그인이 필요합니다."}
 
+    ret = []
     with SessionContext() as session:
-        res = session.query(dbList).all()
-        ret = []
-        for i in res:
-            club = session.query(dbClub).filter_by(cid=i.cid).one_or_none() 
-            tmp = {
-                "cid": i.cid,
-                "name": i.name,
-                "freeze": i.freeze,
-                "director": club.director
-            }
-            ret.append(tmp)
-        return {"result": parse_obj_as(List[ClubList], ret)}
+      club = session.query(dbClub).all()
+    for i in club:
+      with SessionContext() as session:
+        res = session.query(dbBook).filter_by(cid = i.cid)
+        book_list = []
+        for j in res:
+          tmp = {
+            "bid": j.bid,
+            "cid": j.cid,
+            "uid": j.uid,
+            "end": j.end,
+            "data": json.loads(j.data)
+          }
+          book_list.append(tmp)
+
+      tmp = {
+          "cid": i.cid,
+          "name": i.name,
+          "book": book_list,
+          "director": i.director
+        }
+      ret.append(tmp)
+    return {"result": ret}
 
 
 @app.post("/api/club", tags=["Club"])
