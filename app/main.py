@@ -17,6 +17,8 @@ from app.session import rd
 
 from app.ext.naver_book_api import *
 
+import json
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 tags_metadata = [
@@ -556,7 +558,9 @@ async def read_member_info(cid: int, user_id: str, response: Response, auth: str
 
   books_list = []
   for i in books_info:
-    books_list.append(i)
+    li = i
+    li.data = json.loads(i.data)
+    books_list.append(li)
   tmp = {
     "uid": res[0].uid,
     "role": res[0].role,
