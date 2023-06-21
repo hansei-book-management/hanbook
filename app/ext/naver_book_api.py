@@ -36,4 +36,4 @@ def query_book_isbn(q):
   res = requests.get('https://openapi.naver.com/v1/search/book.json', params=params, headers=headers)
   if "isbn" not in res.text:
     return False
-  return res.text
+  return res.json()

@@ -169,7 +169,7 @@ async def rent_book(cid: int, bid: int, response: Response, auth: str = Depends(
         response.status_code = 400
         return {"message": "이미 대여한 도서입니다."}
 
-  end = get_time() + (DAY * 10)
+  end = get_time() + (DAY * 14)
 
   with SessionContext() as session:
     Book = session.query(dbBook).filter_by(cid = cid).filter_by(bid = bid)
