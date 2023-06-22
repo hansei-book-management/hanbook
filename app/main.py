@@ -91,7 +91,7 @@ async def read_book(uid: str, response: Response, auth: str = Depends(oauth2_sch
 
   with SessionContext() as session:
     res = session.query(dbBook).filter_by(uid = uid)
-    user_books_count = res.filter_by(end = 14).count()
+    user_books_count = res.count()
   ret = []
   for i in res:
     tmp = {
@@ -181,7 +181,8 @@ async def rent_book(cid: int, bid: int, response: Response, auth: str = Depends(
     session.commit()
 
   response.status_code = 200
-  return {"result": end}
+  return {"result": {'end': end}}
+
 
 @app.patch("/api/club/{cid}/book/{bid}", tags=["Book"])
 async def return_book(cid: int, bid: int, data: ReturnBook, response: Response, auth: str = Depends(oauth2_scheme)):
