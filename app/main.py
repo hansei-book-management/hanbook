@@ -82,8 +82,40 @@ async def read_book(response: Response, auth: str = Depends(oauth2_scheme)):
   res = query_book_list()
   return {"result": res}
 
-@app.get("/api/club/{uid}/book", tags=["Book"])
-async def read_book(uid: str, response: Response, auth: str = Depends(oauth2_scheme)):
+@app.get("/api/club/{cid}/book", tags=["Book"])
+async def read_book(cid: int, response: Response, auth: str = Depends(oauth2_scheme)):
+    user_id = check_auth(auth)
+    if not user_id:
+      response.status_code = 401
+      return {"message": "로그인이 필요합니다."}
+
+    ret = []
+    with SessionContext() as session:
+      club = session.query(dbList).filter_by(cid = cid)
+    for i in club:
+      with SessionContext() as session:
+        res = session.query(dbBook).filter_by(cid = i.cid)
+        book_list = []
+        for j in res:
+          tmp = {
+            "bid": j.bid,
+            "cid": j.cid,
+            "uid": j.uid,
+            "end": j.end,
+            "data": json.loads(j.data)
+          }
+          book_list.append(tmp)
+
+      tmp = {
+          "cid": i.cid,
+          "name": i.name,
+          "book": book_list,
+        }
+      ret.append(tmp)
+    return {"result": ret}
+
+@app.get("/api/club/member/{uid}/book", tags=["Book"])
+async def get_book(uid: str, response: Response, auth: str = Depends(oauth2_scheme)):
     user_id = check_auth(auth)
     if not user_id:
       response.status_code = 401
@@ -94,7 +126,7 @@ async def read_book(uid: str, response: Response, auth: str = Depends(oauth2_sch
       club = session.query(dbList).filter_by(uid = uid)
     for i in club:
       with SessionContext() as session:
-        res = session.query(dbBook).filter_by(cid = i.cid)
+        res = session.query(dbBook).filter_by(cid = int(i.cid)).filter_by(uid = uid)
         book_list = []
         for j in res:
           tmp = {
