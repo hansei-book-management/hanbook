@@ -576,6 +576,24 @@ async def read_member_info(cid: int, user_id: str, response: Response, auth: str
     li = i
     li.data = json.loads(i.data)
     books_list.append(li)
+  book_club = {}
+  for i in books_list:
+    if i.cid in book_club:
+      continue
+    with SessionContext() as session:
+      r = session.query(dbClub).filter_by(cid = i.cid)
+    club_name = r[0].name
+    club_book = []
+    with SessionContext() as session:
+      r = session.query(dbBook).filter_by(cid = i.cid)
+    for i in r:
+      li = i
+      li.data = json.loads(i.data)
+      club_book.append(li)
+    book_club[i.cid] = {
+      "name": club_name,
+      "book": club_book
+    }
   tmp = {
     "uid": res[0].uid,
     "role": res[0].role,
@@ -584,7 +602,7 @@ async def read_member_info(cid: int, user_id: str, response: Response, auth: str
     "phone": res[0].phone,
     "freeze": club[0].freeze,
     "borrowBook": borrow_count,
-    "books": books_list
+    "books": book_club
   }
   return {"result": tmp}
 
