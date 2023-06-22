@@ -84,26 +84,35 @@ async def read_book(response: Response, auth: str = Depends(oauth2_scheme)):
 
 @app.get("/api/club/{uid}/book", tags=["Book"])
 async def read_book(uid: str, response: Response, auth: str = Depends(oauth2_scheme)):
-  uid = check_auth(auth)
-  if not uid:
-    response.status_code = 401
-    return {"message": "로그인이 필요합니다."}
+    user_id = check_auth(auth)
+    if not user_id:
+      response.status_code = 401
+      return {"message": "로그인이 필요합니다."}
 
-  with SessionContext() as session:
-    res = session.query(dbBook).filter_by(uid = uid)
-    user_books_count = res.count()
-  ret = []
-  for i in res:
-    tmp = {
-      "bid": i.bid,
-      "cid": i.cid,
-      "uid": i.uid,
-      "end": i.end,
-      'borrowBook': user_books_count,
-      "data": json.loads(i.data)
-    }
-    ret.append(tmp)
-  return {"result": ret}
+    ret = []
+    with SessionContext() as session:
+      club = session.query(dbList).filter_by(uid = uid)
+    for i in club:
+      with SessionContext() as session:
+        res = session.query(dbBook).filter_by(cid = i.cid)
+        book_list = []
+        for j in res:
+          tmp = {
+            "bid": j.bid,
+            "cid": j.cid,
+            "uid": j.uid,
+            "end": j.end,
+            "data": json.loads(j.data)
+          }
+          book_list.append(tmp)
+
+      tmp = {
+          "cid": i.cid,
+          "name": i.name,
+          "book": book_list,
+        }
+      ret.append(tmp)
+    return {"result": ret}
 
 @app.post("/api/club/{cid}/book", tags=["Book"])
 async def add_book(cid: int, data: AddBook, response: Response, auth: str = Depends(oauth2_scheme)):
