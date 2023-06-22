@@ -89,29 +89,30 @@ async def read_book(cid: int, response: Response, auth: str = Depends(oauth2_sch
       response.status_code = 401
       return {"message": "로그인이 필요합니다."}
 
+    with SessionContext() as session:
+      res = session.query(dbClub).filter_by(cid = cid)
+    club_name = res[0].name
+
     ret = []
     with SessionContext() as session:
-      club = session.query(dbList).filter_by(cid = cid)
-    for i in club:
-      with SessionContext() as session:
-        res = session.query(dbBook).filter_by(cid = i.cid)
-        book_list = []
-        for j in res:
-          tmp = {
-            "bid": j.bid,
-            "cid": j.cid,
-            "uid": j.uid,
-            "end": j.end,
-            "data": json.loads(j.data)
-          }
-          book_list.append(tmp)
-
+      res = session.query(dbBook).filter_by(cid = cid)
+    book_list = []
+    for j in res:
       tmp = {
-          "cid": i.cid,
-          "name": i.name,
-          "book": book_list,
-        }
-      ret.append(tmp)
+        "bid": j.bid,
+        "cid": j.cid,
+        "uid": j.uid,
+        "end": j.end,
+        "data": json.loads(j.data)
+      }
+      book_list.append(tmp)
+
+    tmp = {
+      "cid": cid,
+       "name": club_name,
+       "book": book_list,
+    }
+    ret.append(tmp)
     return {"result": ret}
 
 @app.get("/api/club/member/{uid}/book", tags=["Book"])
