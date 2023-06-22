@@ -91,19 +91,35 @@ async def read_book(cid: int, response: Response, auth: str = Depends(oauth2_sch
 
     with SessionContext() as session:
       res = session.query(dbClub).filter_by(cid = cid)
+    
+    if not len(list(res)):
+      response.status_code = 401
+      return {"message": "동아리를 찾을 수 없습니다."}
+
+
     club_name = res[0].name
 
     ret = []
     with SessionContext() as session:
       res = session.query(dbBook).filter_by(cid = cid)
     book_list = []
+    
     for j in res:
+      with SessionContext() as session:
+        r0 = session.query(dbUser).filter_by(uid = j.uid)
+      with SessionContext() as session:
+        r1 = session.query(dbList).filter_by(cid = j.cid).filter_by(uid = j.uid)
+      usr = {
+        "name": r0[0].name,
+        "freeze": r1[0].freeze
+      }
       tmp = {
         "bid": j.bid,
         "cid": j.cid,
         "uid": j.uid,
         "end": j.end,
-        "data": json.loads(j.data)
+        "data": json.loads(j.data),
+        "user": usr
       }
       book_list.append(tmp)
 
