@@ -125,6 +125,7 @@ async def get_book(uid: str, response: Response, auth: str = Depends(oauth2_sche
     ret = []
     with SessionContext() as session:
       club = session.query(dbList).filter_by(uid = uid)
+      user_books_count = session.query(dbBook).filter_by(uid = uid).count()
     for i in club:
       with SessionContext() as session:
         res = session.query(dbBook).filter_by(cid = int(i.cid)).filter_by(uid = uid)
@@ -143,6 +144,7 @@ async def get_book(uid: str, response: Response, auth: str = Depends(oauth2_sche
           "cid": i.cid,
           "name": i.name,
           "book": book_list,
+          "borrowBook": user_books_count
         }
       ret.append(tmp)
     return {"result": ret}
@@ -525,10 +527,7 @@ async def club_info(cid: int, response: Response, auth: str = Depends(oauth2_sch
 
   with SessionContext() as session:
     club = session.query(dbList).filter_by(cid = cid)
-
-  with SessionContext() as session:
-    books = session.query(dbBook).filter_by(cid = cid)
-    user_books_count = books.filter_by(uid = uid).filter_by(end=14).count()
+    user_books_count = session.query(dbBook).filter_by(uid = uid).count()
 
   user_list = []
   for i in club:
