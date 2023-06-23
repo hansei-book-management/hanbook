@@ -18,6 +18,7 @@ from app.session import rd
 from app.ext.naver_book_api import *
 
 import json
+import random
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -54,6 +55,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+user_cache = {}
+
 @app.post("/api/books/search", tags=["Book"])
 async def search_books(query: str, response: Response, auth: str = Depends(oauth2_scheme)):
   uid = check_auth(auth)
@@ -84,6 +87,8 @@ async def read_book(response: Response, auth: str = Depends(oauth2_scheme)):
 
 @app.get("/api/club/{cid}/book", tags=["Book"])
 async def read_book(cid: int, response: Response, auth: str = Depends(oauth2_scheme)):
+    global user_cache
+
     user_id = check_auth(auth)
     if not user_id:
       response.status_code = 401
@@ -105,14 +110,19 @@ async def read_book(cid: int, response: Response, auth: str = Depends(oauth2_sch
     book_list = []
     
     for j in res:
-      with SessionContext() as session:
-        r0 = session.query(dbUser).filter_by(uid = j.uid)
-      with SessionContext() as session:
-        r1 = session.query(dbList).filter_by(cid = j.cid).filter_by(uid = j.uid)
-      usr = {
-        "name": r0[0].name,
-        "freeze": r1[0].freeze
-      }
+      if j.uid in user_cache:
+        usr = user_cache[j.uid]
+        if random.randint(1, 2) ==11: del user_cache[j.uid]
+      else:
+        with SessionContext() as session:
+          r0 = session.query(dbUser).filter_by(uid = j.uid)
+        with SessionContext() as session:
+          r1 = session.query(dbList).filter_by(cid = j.cid).filter_by(uid = j.uid)
+        usr = {
+          "name": r0[0].name,
+          "freeze": r1[0].freeze
+        }
+        user_cache[j.uid] = usr
       tmp = {
         "bid": j.bid,
         "cid": j.cid,
