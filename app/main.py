@@ -166,6 +166,8 @@ async def get_book(uid: str, response: Response, auth: str = Depends(oauth2_sche
     else:
         with SessionContext() as session:
             r0 = session.query(dbUser).filter_by(uid = uid)
+        if not len(list(r0)):
+          return {"message": "해당 사용자를 찾을 수 없습니다."}
         usr = {
           "name": r0[0].name,
         }
