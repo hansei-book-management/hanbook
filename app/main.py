@@ -109,20 +109,28 @@ async def read_book(cid: int, response: Response, auth: str = Depends(oauth2_sch
       res = session.query(dbBook).filter_by(cid = cid)
     book_list = []
     
+    freeze_cache = {}
+
     for j in res:
       if j.uid in user_cache:
         usr = user_cache[j.uid]
-        if random.randint(1, 2) ==11: del user_cache[j.uid]
       else:
         with SessionContext() as session:
           r0 = session.query(dbUser).filter_by(uid = j.uid)
-        with SessionContext() as session:
-          r1 = session.query(dbList).filter_by(cid = j.cid).filter_by(uid = j.uid)
         usr = {
           "name": r0[0].name,
-          "freeze": r1[0].freeze
         }
         user_cache[j.uid] = usr
+      
+      if j.uid in freeze_cache:
+        usr["freeze"] = freeze_cache[j.uid]
+      else:
+        with SessionContext() as session:
+          r1 = session.query(dbList).filter_by(cid = j.cid).filter_by(uid = j.uid)
+
+        usr["freeze"] = r1[0].freeze
+        freeze_cache[j.uid] = r1[0].freeze
+
       tmp = {
         "bid": j.bid,
         "cid": j.cid,
@@ -152,25 +160,42 @@ async def get_book(uid: str, response: Response, auth: str = Depends(oauth2_sche
     with SessionContext() as session:
       club = session.query(dbList).filter_by(uid = uid)
       user_books_count = session.query(dbBook).filter_by(uid = uid).count()
+    
+    if uid in user_cache:
+        usr = user_cache[uid]
+    else:
+        with SessionContext() as session:
+            r0 = session.query(dbUser).filter_by(uid = uid)
+        usr = {
+          "name": r0[0].name,
+        }
+        user_cache[uid] = usr
+
     for i in club:
       with SessionContext() as session:
+          r1 = session.query(dbList).filter_by(cid = i.cid).filter_by(uid = uid)
+
+      usr["freeze"] = r1[0].freeze
+
+      with SessionContext() as session:
         res = session.query(dbBook).filter_by(cid = int(i.cid)).filter_by(uid = uid)
-        book_list = []
-        for j in res:
-          tmp = {
-            "bid": j.bid,
-            "cid": j.cid,
-            "uid": j.uid,
-            "end": j.end,
-            "data": json.loads(j.data)
-          }
-          book_list.append(tmp)
+      book_list = []
+      for j in res:
+        tmp = {
+          "bid": j.bid,
+          "cid": j.cid,
+          "uid": j.uid,
+          "end": j.end,
+          "data": json.loads(j.data),
+        }
+        book_list.append(tmp)
 
       tmp = {
           "cid": i.cid,
           "name": i.name,
           "book": book_list,
-          "borrowBook": user_books_count
+          "borrowBook": user_books_count,
+          "user": usr
         }
       ret.append(tmp)
     return {"result": ret}
