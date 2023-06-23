@@ -243,6 +243,25 @@ async def rent_book(cid: int, bid: int, response: Response, auth: str = Depends(
   response.status_code = 200
   return {"result": {'end': end}}
 
+@app.delete("/api/club/{cid}/book/{bid}", tags=["Book"])
+async def delete_book(cid: int, bid: int, response: Response, auth: str = Depends(oauth2_scheme)):
+  uid = check_auth(auth)
+  if not uid:
+    response.status_code = 401
+    return {"message": "로그인이 필요합니다."}
+
+  with SessionContext() as session:
+    res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
+  if not len(list(res)):
+    response.status_code = 400
+    return {"message": "자신이 부장인 동아리에만 도서를 삭제할 수 있습니다."}
+
+  with SessionContext() as session:
+    Book = session.query(dbBook).filter_by(cid = cid).filter_by(bid = bid)
+    Book.delete()
+    session.commit()
+
+  return {"message": "성공적으로 도서를 삭제했습니다."}
 
 @app.patch("/api/club/{cid}/book/{bid}", tags=["Book"])
 async def return_book(cid: int, bid: int, data: ReturnBook, response: Response, auth: str = Depends(oauth2_scheme)):
