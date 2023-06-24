@@ -717,7 +717,7 @@ async def read_member_info(cid: int, user_id: str, response: Response, auth: str
     "phone": res[0].phone,
     "freeze": club[0].freeze,
     "borrowBook": borrow_count,
-    "books": book_club
+    "books": book_club[cid]
   }
   return {"result": tmp}
 
