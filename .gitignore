@@ -21,6 +21,7 @@ uploads
 *.iml
 
 # log files
+log
 *.log
 ./gunicorn-access.log
 
