@@ -600,7 +600,6 @@ async def club_info(cid: int, response: Response, auth: str = Depends(oauth2_sch
 
   with SessionContext() as session:
     club = session.query(dbList).filter_by(cid = cid)
-    user_books_count = session.query(dbBook).filter_by(uid = uid).count()
 
   user_list = []
   for i in club:
@@ -610,6 +609,11 @@ async def club_info(cid: int, response: Response, auth: str = Depends(oauth2_sch
   for i in user_list:
     with SessionContext() as session:
       res = session.query(dbUser).filter_by(uid = i[0])
+      user_book = session.query(dbBook).filter_by(uid = i[0]).all()
+      user_books_count = 0
+      for e in user_book:
+        if e.end > 0:
+          user_books_count += 1
     tmp = {
       "uid": res[0].uid,
       "role": res[0].role,
