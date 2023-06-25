@@ -1,6 +1,9 @@
 import requests
 import os
 
+import json
+
+
 headers = {
     'X-Naver-Client-Id': os.environ["NAVER_CLIENT_ID"],
     'X-Naver-Client-Secret': os.environ["NAVER_CLIENT_SECRET"],
@@ -14,7 +17,10 @@ def query_book(q):
   }
 
   res = requests.get('https://openapi.naver.com/v1/search/book.json', params=params, headers=headers)
-  return res.json()
+  try:
+    return res.json()
+  except:
+    return False
 
 def query_book_list():
   params = {
@@ -24,7 +30,7 @@ def query_book_list():
   }
 
   res = requests.get('https://openapi.naver.com/v1/search/book.json', params=params, headers=headers)
-  return res.json()
+  return json.loads(res.text)
 
 def query_book_isbn(q):
   params = {
@@ -36,4 +42,4 @@ def query_book_isbn(q):
   res = requests.get('https://openapi.naver.com/v1/search/book.json', params=params, headers=headers)
   if "isbn" not in res.text:
     return False
-  return res.json()
+  return json.loads(res.text)
