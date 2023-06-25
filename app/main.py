@@ -255,7 +255,7 @@ async def rent_book(cid: int, bid: int, response: Response, auth: str = Depends(
   if len(list(res)):
     if res[0].freeze > get_time(): 
       response.status_code = 400
-      return {"message": "대출한 도서를 기간 내에 반납하지 않아 대여가 일시 정지되었어요."}
+      return {"message": "대여한 도서를 기간 내에 반납하지 않아 대여가 일시 정지되었어요."}
 
   with SessionContext() as session:
     res = session.query(dbBook).filter_by(bid = bid).filter_by(cid = cid).filter_by(end = 0)
@@ -742,7 +742,7 @@ async def patch_member(cid: int, user_id: str, data: Freeze, response: Response,
     res = session.query(dbClub).filter_by(director = uid).filter_by(cid = cid)
   if not len(list(res)):
     response.status_code = 400
-    return {"message":"자신이 부장인 동아리에 소속된 부원만 대출 정지 해제가 가능합니다."}
+    return {"message":"자신이 부장인 동아리에 소속된 부원만 대여 정지 해제가 가능합니다."}
 
   with SessionContext() as session:
     ClubList = session.query(dbList).filter_by(uid = user_id).filter_by(cid = cid)
