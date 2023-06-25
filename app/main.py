@@ -616,9 +616,13 @@ async def club_info(cid: int, response: Response, auth: str = Depends(oauth2_sch
       res = session.query(dbUser).filter_by(uid = i[0])
       user_book = session.query(dbBook).filter_by(uid = i[0]).all()
       user_books_count = 0
+      book_list = []
       for e in user_book:
         if e.end > 0:
           user_books_count += 1
+        l = e
+        l.data = json.loads(l.data)
+        book_list.append(l)
     tmp = {
       "uid": res[0].uid,
       "role": res[0].role,
@@ -626,6 +630,7 @@ async def club_info(cid: int, response: Response, auth: str = Depends(oauth2_sch
       "num": res[0].num,
       "phone": res[0].phone,
       "borrowBook": user_books_count,
+      "book": book_list,
       "freeze": i[1]
     }
     ret.append(tmp)
@@ -633,7 +638,7 @@ async def club_info(cid: int, response: Response, auth: str = Depends(oauth2_sch
       'name': club[0].name,
       'director': uid,
       'cid': cid,
-      'members': parse_obj_as(List[ClubUserList], ret)
+      'members': ret
     }
   return {"result": result}
 
