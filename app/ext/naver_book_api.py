@@ -17,10 +17,7 @@ def query_book(q):
   }
 
   res = requests.get('https://openapi.naver.com/v1/search/book.json', params=params, headers=headers)
-  try:
-    return res.json()
-  except:
-    return False
+  return res.json()
 
 def query_book_list():
   params = {
