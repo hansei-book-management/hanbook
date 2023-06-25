@@ -726,7 +726,7 @@ async def read_member_info(cid: int, user_id: str, response: Response, auth: str
     "phone": res[0].phone,
     "freeze": club[0].freeze,
     "borrowBook": borrow_count,
-    "books": book_club[cid]
+    "books": book_club[cid] if cid in book_club else {}
   }
   return {"result": tmp}
 
