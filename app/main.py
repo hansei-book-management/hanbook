@@ -744,9 +744,11 @@ async def patch_member(cid: int, user_id: str, data: Freeze, response: Response,
     response.status_code = 400
     return {"message":"자신이 부장인 동아리에 소속된 부원만 대출 정지 해제가 가능합니다."}
 
+  freeze = get_time() + data.freeze * DAY if data.freeze else 0
+
   with SessionContext() as session:
     ClubList = session.query(dbList).filter_by(uid = user_id).filter_by(cid = cid)
-    ClubList.update({"freeze": get_time() + data.freeze * DAY})
+    ClubList.update({"freeze": freeze})
     session.commit()
   response.status_code = 200
   return {"result": {'freeze': data.freeze}}
