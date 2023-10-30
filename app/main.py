@@ -325,7 +325,7 @@ async def return_book(cid: int, bid: int, data: ReturnBook, response: Response, 
   if res[0].end < get_time():
     freeze = get_time() + (DAY * 10)
     with SessionContext() as session:
-      ClubList = session.query(dbList).filter_by(uid = user_id).filter_by(cid = cid)
+      ClubList = session.query(dbList).filter_by(uid = uid).filter_by(cid = cid)
       ClubList.update({"freeze": freeze})
       session.commit()
 
